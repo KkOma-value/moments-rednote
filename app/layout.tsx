@@ -9,15 +9,15 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: "Social Generator - AI Content Studio",
+  title: "Moments RedNote - AI Content Studio",
   description: "AI-Powered Social Media Content Generator for WeChat and RedNote",
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
+interface RootLayoutProps {
   children: React.ReactNode;
-}>) {
+}
+
+export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="zh-CN">
       <body className={`${outfit.variable} antialiased`}>

@@ -6,6 +6,37 @@ import { Platform, DeviceMode, PreviewData } from '@/types';
 import { STYLES, PRODUCTS, MOCK_HISTORY } from '@/lib/constants';
 import { WeChatPreview, RedNotePreview } from '@/components/PreviewRenderers';
 
+// Platform-specific styling helpers
+function getPlatformColors(isWeChat: boolean) {
+  return isWeChat
+    ? {
+        primary: 'emerald',
+        secondary: 'teal',
+        gradientFrom: 'from-emerald-400',
+        gradientTo: 'to-teal-500',
+        bgGradient: 'bg-gradient-to-r from-emerald-500 to-teal-500',
+        bgGradientHover: 'hover:from-emerald-400 hover:to-teal-400',
+        shadow: 'shadow-emerald-500/25',
+        bgClass: 'bg-mesh-gradient-wechat',
+        iconBg: 'bg-emerald-500/20',
+        iconText: 'text-emerald-400',
+        pillBg: 'bg-gradient-to-r from-emerald-500/30 to-teal-500/30 shadow-lg shadow-emerald-500/20',
+      }
+    : {
+        primary: 'rose',
+        secondary: 'pink',
+        gradientFrom: 'from-rose-400',
+        gradientTo: 'to-pink-500',
+        bgGradient: 'bg-gradient-to-r from-rose-500 to-pink-500',
+        bgGradientHover: 'hover:from-rose-400 hover:to-pink-400',
+        shadow: 'shadow-rose-500/25',
+        bgClass: 'bg-mesh-gradient-rednote',
+        iconBg: 'bg-rose-500/20',
+        iconText: 'text-rose-400',
+        pillBg: 'bg-gradient-to-r from-rose-500/30 to-pink-500/30 shadow-lg shadow-rose-500/20',
+      };
+}
+
 export default function Home() {
   const [platform, setPlatform] = useState<Platform>(Platform.WeChat);
   const [device, setDevice] = useState<DeviceMode>(DeviceMode.Phone);
@@ -19,22 +50,23 @@ export default function Home() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isWeChat = platform === Platform.WeChat;
+  const colors = getPlatformColors(isWeChat);
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreviewData(prev => ({ ...prev, image: reader.result as string }));
-      };
-      reader.readAsDataURL(file);
-    }
-  };
+  function handleImageUpload(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
 
-  const handleStart = () => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPreviewData(prev => ({ ...prev, image: reader.result as string }));
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function handleGenerate() {
     setIsGenerating(true);
     setTimeout(() => setIsGenerating(false), 2500);
-  };
+  }
 
   return (
     <div className="min-h-screen w-full flex flex-col md:flex-row overflow-hidden">
@@ -47,17 +79,12 @@ export default function Home() {
         {/* Header with Logo */}
         <div className="px-6 pt-6 pb-4">
           <div className="flex items-center gap-3">
-            <div className={`
-              w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-500
-              ${isWeChat
-                ? 'bg-gradient-to-br from-emerald-400 to-teal-500 glow-wechat'
-                : 'bg-gradient-to-br from-rose-400 to-pink-500 glow-rednote'}
-            `}>
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-500 ${colors.gradientFrom} ${colors.gradientTo} ${isWeChat ? 'glow-wechat' : 'glow-rednote'}`}>
               <Sparkles className="w-5 h-5 text-white" />
             </div>
             <div>
               <h1 className="font-display text-lg font-bold text-white tracking-tight">
-                Social Generator
+                Moments RedNote
               </h1>
               <p className="text-xs text-white/40">AI-Powered Content Studio</p>
             </div>
@@ -71,30 +98,17 @@ export default function Home() {
           <div className="relative">
             <div className="glass rounded-2xl p-1.5 flex relative">
               {/* Animated Background Pill */}
-              <div
-                className={`
-                  absolute top-1.5 h-[calc(100%-12px)] w-[calc(50%-6px)] rounded-xl transition-all duration-500 ease-out
-                  ${isWeChat
-                    ? 'left-1.5 bg-gradient-to-r from-emerald-500/30 to-teal-500/30 shadow-lg shadow-emerald-500/20'
-                    : 'left-[calc(50%+1.5px)] bg-gradient-to-r from-rose-500/30 to-pink-500/30 shadow-lg shadow-rose-500/20'}
-                `}
-              />
+              <div className={`absolute top-1.5 h-[calc(100%-12px)] w-[calc(50%-6px)] rounded-xl transition-all duration-500 ease-out ${isWeChat ? 'left-1.5' : 'left-[calc(50%+1.5px)]'} ${colors.pillBg}`} />
               <button
                 onClick={() => setPlatform(Platform.WeChat)}
-                className={`
-                  flex-1 py-3 px-4 rounded-xl text-sm font-semibold z-10 transition-all duration-300 flex items-center justify-center gap-2
-                  ${isWeChat ? 'text-emerald-400' : 'text-white/50 hover:text-white/70'}
-                `}
+                className={`flex-1 py-3 px-4 rounded-xl text-sm font-semibold z-10 transition-all duration-300 flex items-center justify-center gap-2 ${isWeChat ? colors.iconText : 'text-white/50 hover:text-white/70'}`}
               >
                 <MessageCircle size={16} className={isWeChat ? 'fill-emerald-400/30' : ''} />
                 WeChat
               </button>
               <button
                 onClick={() => setPlatform(Platform.RedNote)}
-                className={`
-                  flex-1 py-3 px-4 rounded-xl text-sm font-semibold z-10 transition-all duration-300 flex items-center justify-center gap-2
-                  ${!isWeChat ? 'text-rose-400' : 'text-white/50 hover:text-white/70'}
-                `}
+                className={`flex-1 py-3 px-4 rounded-xl text-sm font-semibold z-10 transition-all duration-300 flex items-center justify-center gap-2 ${!isWeChat ? colors.iconText : 'text-white/50 hover:text-white/70'}`}
               >
                 <Heart size={16} className={!isWeChat ? 'fill-rose-400/30' : ''} />
                 RedNote
@@ -149,10 +163,7 @@ export default function Home() {
                   </>
                 ) : (
                   <div className="h-full flex flex-col items-center justify-center gap-3">
-                    <div className={`
-                      w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300 group-hover:scale-110
-                      ${isWeChat ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'}
-                    `}>
+                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300 group-hover:scale-110 ${colors.iconBg} ${colors.iconText}`}>
                       <Upload className="w-5 h-5" />
                     </div>
                     <div className="text-center">
@@ -174,7 +185,7 @@ export default function Home() {
                     onChange={(e) => setPreviewData(prev => ({ ...prev, style: e.target.value }))}
                     className="input-glass w-full appearance-none pl-4 pr-10 py-3 text-sm font-medium text-white cursor-pointer"
                   >
-                    {STYLES.map(s => <option key={s.value} value={s.value} className="bg-[#0a0a0f] text-white">{s.label.split(' ')[0]}</option>)}
+                    {STYLES.map(s => <option key={s.value} value={s.value} className="bg-[#0a0a0f] text-white">{s.label}</option>)}
                   </select>
                   <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 pointer-events-none group-hover:text-white/50 transition-colors" />
                 </div>
@@ -188,7 +199,7 @@ export default function Home() {
                     onChange={(e) => setPreviewData(prev => ({ ...prev, product: e.target.value }))}
                     className="input-glass w-full appearance-none pl-4 pr-10 py-3 text-sm font-medium text-white cursor-pointer"
                   >
-                    {PRODUCTS.map(p => <option key={p.value} value={p.value} className="bg-[#0a0a0f] text-white">{p.label.split(' ')[0]}</option>)}
+                    {PRODUCTS.map(p => <option key={p.value} value={p.value} className="bg-[#0a0a0f] text-white">{p.label}</option>)}
                   </select>
                   <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 pointer-events-none group-hover:text-white/50 transition-colors" />
                 </div>
@@ -224,12 +235,7 @@ export default function Home() {
                   className="group flex items-center p-3 rounded-xl glass hover:bg-white/10 transition-all cursor-pointer gap-3"
                   style={{ animationDelay: `${375 + idx * 50}ms` }}
                 >
-                  <div className={`
-                    w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 transition-all
-                    ${item.platform === Platform.WeChat
-                      ? 'bg-emerald-500/20 text-emerald-400 group-hover:bg-emerald-500/30'
-                      : 'bg-rose-500/20 text-rose-400 group-hover:bg-rose-500/30'}
-                  `}>
+                  <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 transition-all ${item.platform === Platform.WeChat ? 'bg-emerald-500/20 text-emerald-400 group-hover:bg-emerald-500/30' : 'bg-rose-500/20 text-rose-400 group-hover:bg-rose-500/30'}`}>
                     {item.platform === Platform.WeChat ? (
                       <MessageCircle size={16} className="fill-current opacity-60" />
                     ) : (
@@ -251,16 +257,9 @@ export default function Home() {
         {/* Generate Button */}
         <div className="p-6 border-t border-white/5">
           <button
-            onClick={handleStart}
+            onClick={handleGenerate}
             disabled={isGenerating}
-            className={`
-              relative w-full flex items-center justify-center gap-2.5 py-4 rounded-2xl font-bold text-white text-sm
-              transition-all duration-300 active:scale-[0.98] overflow-hidden
-              ${isWeChat
-                ? 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 shadow-lg shadow-emerald-500/25'
-                : 'bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-400 hover:to-pink-400 shadow-lg shadow-rose-500/25'}
-              ${isGenerating ? 'opacity-80 cursor-wait' : 'btn-shimmer hover:shadow-xl'}
-            `}
+            className={`relative w-full flex items-center justify-center gap-2.5 py-4 rounded-2xl font-bold text-white text-sm transition-all duration-300 active:scale-[0.98] overflow-hidden ${colors.bgGradient} ${colors.bgGradientHover} shadow-lg ${colors.shadow} ${isGenerating ? 'opacity-80 cursor-wait' : 'btn-shimmer hover:shadow-xl'}`}
           >
             {isGenerating ? (
               <>
@@ -289,10 +288,7 @@ export default function Home() {
       {/* ============================================
           MAIN PREVIEW AREA
       ============================================ */}
-      <main className={`
-        flex-1 relative flex flex-col transition-all duration-700
-        ${isWeChat ? 'bg-mesh-gradient-wechat' : 'bg-mesh-gradient-rednote'}
-      `}>
+      <main className={`flex-1 relative flex flex-col transition-all duration-700 ${colors.bgClass}`}>
 
         {/* Device Toggle */}
         <div className="absolute top-6 right-6 z-20">
@@ -352,16 +348,8 @@ export default function Home() {
 
             {/* Loading Overlay */}
             {isGenerating && (
-              <div className={`
-                absolute inset-0 flex flex-col items-center justify-center z-50 rounded-[inherit]
-                ${device === DeviceMode.Phone ? 'bg-white/60 backdrop-blur-xl' : 'bg-white/50 backdrop-blur-lg'}
-              `}>
-                <div className={`
-                  w-16 h-16 rounded-2xl flex items-center justify-center mb-4
-                  ${isWeChat
-                    ? 'bg-gradient-to-br from-emerald-400 to-teal-500'
-                    : 'bg-gradient-to-br from-rose-400 to-pink-500'}
-                `}>
+              <div className={`absolute inset-0 flex flex-col items-center justify-center z-50 rounded-[inherit] ${device === DeviceMode.Phone ? 'bg-white/60 backdrop-blur-xl' : 'bg-white/50 backdrop-blur-lg'}`}>
+                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-4 ${colors.gradientFrom} ${colors.gradientTo}`}>
                   <Wand2 className="w-7 h-7 text-white animate-pulse" />
                 </div>
                 <p className="text-sm font-semibold text-[#0a0a0f]">Creating your content...</p>
