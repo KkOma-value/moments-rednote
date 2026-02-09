@@ -1,63 +1,374 @@
-import Image from "next/image";
+'use client';
+
+import React, { useState, useRef } from 'react';
+import { Upload, Smartphone, Monitor, Wand2, MessageCircle, Heart, History, ChevronDown, Sparkles, Zap } from 'lucide-react';
+import { Platform, DeviceMode, PreviewData } from '@/types';
+import { STYLES, PRODUCTS, MOCK_HISTORY } from '@/lib/constants';
+import { WeChatPreview, RedNotePreview } from '@/components/PreviewRenderers';
 
 export default function Home() {
+  const [platform, setPlatform] = useState<Platform>(Platform.WeChat);
+  const [device, setDevice] = useState<DeviceMode>(DeviceMode.Phone);
+  const [previewData, setPreviewData] = useState<PreviewData>({
+    image: null,
+    style: STYLES[0].value,
+    product: PRODUCTS[0].value,
+    prompt: '',
+  });
+  const [isGenerating, setIsGenerating] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const isWeChat = platform === Platform.WeChat;
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreviewData(prev => ({ ...prev, image: reader.result as string }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleStart = () => {
+    setIsGenerating(true);
+    setTimeout(() => setIsGenerating(false), 2500);
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="min-h-screen w-full flex flex-col md:flex-row overflow-hidden">
+
+      {/* ============================================
+          SIDEBAR - Glass Panel
+      ============================================ */}
+      <aside className="w-full md:w-[360px] glass-dark relative flex flex-col z-20 shrink-0 h-screen noise-overlay">
+
+        {/* Header with Logo */}
+        <div className="px-6 pt-6 pb-4">
+          <div className="flex items-center gap-3">
+            <div className={`
+              w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-500
+              ${isWeChat
+                ? 'bg-gradient-to-br from-emerald-400 to-teal-500 glow-wechat'
+                : 'bg-gradient-to-br from-rose-400 to-pink-500 glow-rednote'}
+            `}>
+              <Sparkles className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h1 className="font-display text-lg font-bold text-white tracking-tight">
+                Social Generator
+              </h1>
+              <p className="text-xs text-white/40">AI-Powered Content Studio</p>
+            </div>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto px-6 pb-6 space-y-6 scrollbar-hide">
+
+          {/* Platform Toggle */}
+          <div className="relative">
+            <div className="glass rounded-2xl p-1.5 flex relative">
+              {/* Animated Background Pill */}
+              <div
+                className={`
+                  absolute top-1.5 h-[calc(100%-12px)] w-[calc(50%-6px)] rounded-xl transition-all duration-500 ease-out
+                  ${isWeChat
+                    ? 'left-1.5 bg-gradient-to-r from-emerald-500/30 to-teal-500/30 shadow-lg shadow-emerald-500/20'
+                    : 'left-[calc(50%+1.5px)] bg-gradient-to-r from-rose-500/30 to-pink-500/30 shadow-lg shadow-rose-500/20'}
+                `}
+              />
+              <button
+                onClick={() => setPlatform(Platform.WeChat)}
+                className={`
+                  flex-1 py-3 px-4 rounded-xl text-sm font-semibold z-10 transition-all duration-300 flex items-center justify-center gap-2
+                  ${isWeChat ? 'text-emerald-400' : 'text-white/50 hover:text-white/70'}
+                `}
+              >
+                <MessageCircle size={16} className={isWeChat ? 'fill-emerald-400/30' : ''} />
+                WeChat
+              </button>
+              <button
+                onClick={() => setPlatform(Platform.RedNote)}
+                className={`
+                  flex-1 py-3 px-4 rounded-xl text-sm font-semibold z-10 transition-all duration-300 flex items-center justify-center gap-2
+                  ${!isWeChat ? 'text-rose-400' : 'text-white/50 hover:text-white/70'}
+                `}
+              >
+                <Heart size={16} className={!isWeChat ? 'fill-rose-400/30' : ''} />
+                RedNote
+              </button>
+            </div>
+          </div>
+
+          {/* Configuration Cards */}
+          <div className="space-y-4">
+
+            {/* Image Upload */}
+            <div className="space-y-2 animate-in delay-75">
+              <label className="flex items-center justify-between text-[10px] uppercase tracking-widest font-semibold text-white/40">
+                <span>Visual Asset</span>
+                {previewData.image && (
+                  <button
+                    onClick={() => setPreviewData(prev => ({ ...prev, image: null }))}
+                    className="text-rose-400/70 hover:text-rose-400 transition-colors normal-case tracking-normal"
+                  >
+                    Remove
+                  </button>
+                )}
+              </label>
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                className={`
+                  relative h-36 w-full rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 group
+                  ${previewData.image
+                    ? 'ring-2 ring-white/10'
+                    : 'glass hover:bg-white/10 border border-dashed border-white/15 hover:border-white/25'}
+                `}
+              >
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  className="hidden"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                />
+                {previewData.image ? (
+                  <>
+                    <img
+                      src={previewData.image}
+                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                      alt="Preview"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <div className="glass px-4 py-2 rounded-xl text-xs font-medium text-white transform translate-y-2 group-hover:translate-y-0 transition-transform">
+                        Replace Image
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="h-full flex flex-col items-center justify-center gap-3">
+                    <div className={`
+                      w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300 group-hover:scale-110
+                      ${isWeChat ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'}
+                    `}>
+                      <Upload className="w-5 h-5" />
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm font-medium text-white/70">Drop your image here</p>
+                      <p className="text-xs text-white/40 mt-0.5">or click to browse</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Style & Product Selects */}
+            <div className="grid grid-cols-2 gap-3 animate-in delay-150">
+              <div className="space-y-2">
+                <label className="block text-[10px] uppercase tracking-widest font-semibold text-white/40">Style</label>
+                <div className="relative group">
+                  <select
+                    value={previewData.style}
+                    onChange={(e) => setPreviewData(prev => ({ ...prev, style: e.target.value }))}
+                    className="input-glass w-full appearance-none pl-4 pr-10 py-3 text-sm font-medium text-white cursor-pointer"
+                  >
+                    {STYLES.map(s => <option key={s.value} value={s.value} className="bg-[#0a0a0f] text-white">{s.label.split(' ')[0]}</option>)}
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 pointer-events-none group-hover:text-white/50 transition-colors" />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-[10px] uppercase tracking-widest font-semibold text-white/40">Product</label>
+                <div className="relative group">
+                  <select
+                    value={previewData.product}
+                    onChange={(e) => setPreviewData(prev => ({ ...prev, product: e.target.value }))}
+                    className="input-glass w-full appearance-none pl-4 pr-10 py-3 text-sm font-medium text-white cursor-pointer"
+                  >
+                    {PRODUCTS.map(p => <option key={p.value} value={p.value} className="bg-[#0a0a0f] text-white">{p.label.split(' ')[0]}</option>)}
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 pointer-events-none group-hover:text-white/50 transition-colors" />
+                </div>
+              </div>
+            </div>
+
+            {/* Prompt Textarea */}
+            <div className="space-y-2 animate-in delay-225">
+              <label className="flex items-center justify-between text-[10px] uppercase tracking-widest font-semibold text-white/40">
+                <span>Creative Prompt</span>
+                <span className="tabular-nums">{previewData.prompt.length}/500</span>
+              </label>
+              <textarea
+                value={previewData.prompt}
+                onChange={(e) => setPreviewData(prev => ({ ...prev, prompt: e.target.value }))}
+                placeholder="Describe the vibe, key selling points, and target audience..."
+                maxLength={500}
+                className="input-glass w-full h-28 px-4 py-3 resize-none text-sm leading-relaxed text-white placeholder-white/30"
+              />
+            </div>
+          </div>
+
+          {/* Recent History */}
+          <div className="pt-2 animate-in delay-300">
+            <div className="flex items-center gap-2 mb-3 text-white/40">
+              <History size={12} />
+              <span className="text-[10px] uppercase tracking-widest font-semibold">Recent Projects</span>
+            </div>
+            <div className="space-y-2">
+              {MOCK_HISTORY.map((item, idx) => (
+                <div
+                  key={item.id}
+                  className="group flex items-center p-3 rounded-xl glass hover:bg-white/10 transition-all cursor-pointer gap-3"
+                  style={{ animationDelay: `${375 + idx * 50}ms` }}
+                >
+                  <div className={`
+                    w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 transition-all
+                    ${item.platform === Platform.WeChat
+                      ? 'bg-emerald-500/20 text-emerald-400 group-hover:bg-emerald-500/30'
+                      : 'bg-rose-500/20 text-rose-400 group-hover:bg-rose-500/30'}
+                  `}>
+                    {item.platform === Platform.WeChat ? (
+                      <MessageCircle size={16} className="fill-current opacity-60" />
+                    ) : (
+                      <Heart size={16} className="fill-current opacity-60" />
+                    )}
+                  </div>
+                  <div className="flex flex-col min-w-0 flex-1">
+                    <span className="font-medium text-xs text-white/80 truncate group-hover:text-white transition-colors">
+                      {item.title}
+                    </span>
+                    <span className="text-[10px] text-white/40 mt-0.5">{item.timestamp}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Generate Button */}
+        <div className="p-6 border-t border-white/5">
+          <button
+            onClick={handleStart}
+            disabled={isGenerating}
+            className={`
+              relative w-full flex items-center justify-center gap-2.5 py-4 rounded-2xl font-bold text-white text-sm
+              transition-all duration-300 active:scale-[0.98] overflow-hidden
+              ${isWeChat
+                ? 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 shadow-lg shadow-emerald-500/25'
+                : 'bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-400 hover:to-pink-400 shadow-lg shadow-rose-500/25'}
+              ${isGenerating ? 'opacity-80 cursor-wait' : 'btn-shimmer hover:shadow-xl'}
+            `}
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+            {isGenerating ? (
+              <>
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <span>Generating Magic...</span>
+              </>
+            ) : (
+              <>
+                <Zap size={18} className="fill-white/30" />
+                <span>Generate Content</span>
+              </>
+            )}
+          </button>
+
+          {isGenerating && (
+            <button
+              onClick={() => setIsGenerating(false)}
+              className="w-full mt-2 text-xs font-medium text-white/40 hover:text-rose-400 transition-colors py-2"
+            >
+              Cancel
+            </button>
+          )}
+        </div>
+      </aside>
+
+      {/* ============================================
+          MAIN PREVIEW AREA
+      ============================================ */}
+      <main className={`
+        flex-1 relative flex flex-col transition-all duration-700
+        ${isWeChat ? 'bg-mesh-gradient-wechat' : 'bg-mesh-gradient-rednote'}
+      `}>
+
+        {/* Device Toggle */}
+        <div className="absolute top-6 right-6 z-20">
+          <div className="glass rounded-xl p-1 flex gap-1">
+            <button
+              onClick={() => setDevice(DeviceMode.Web)}
+              className={`
+                p-2.5 rounded-lg transition-all duration-300
+                ${device === DeviceMode.Web
+                  ? 'bg-white/15 text-white shadow-sm'
+                  : 'text-white/40 hover:text-white/70 hover:bg-white/5'}
+              `}
+              title="Desktop View"
+            >
+              <Monitor size={16} />
+            </button>
+            <button
+              onClick={() => setDevice(DeviceMode.Phone)}
+              className={`
+                p-2.5 rounded-lg transition-all duration-300
+                ${device === DeviceMode.Phone
+                  ? 'bg-white/15 text-white shadow-sm'
+                  : 'text-white/40 hover:text-white/70 hover:bg-white/5'}
+              `}
+              title="Mobile View"
+            >
+              <Smartphone size={16} />
+            </button>
+          </div>
+        </div>
+
+        {/* Preview Container */}
+        <div className="flex-1 flex items-center justify-center p-8 overflow-hidden">
+          <div
+            className={`
+              relative bg-white transition-all duration-700 ease-out flex flex-col
+              ${device === DeviceMode.Phone
+                ? 'w-[390px] h-[780px] rounded-[48px] ring-[12px] ring-[#0a0a0f] device-shadow-phone'
+                : 'w-[1100px] h-[700px] rounded-2xl ring-1 ring-white/10 device-shadow-web'}
+            `}
           >
-            Documentation
-          </a>
+            {/* Phone Notch */}
+            {device === DeviceMode.Phone && (
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[120px] h-[32px] bg-[#0a0a0f] rounded-b-3xl z-30 flex justify-center items-center">
+                <div className="w-16 h-4 bg-black rounded-full" />
+              </div>
+            )}
+
+            {/* Content */}
+            <div className={`h-full w-full overflow-hidden bg-white ${device === DeviceMode.Phone ? 'rounded-[36px]' : 'rounded-2xl'}`}>
+              {platform === Platform.WeChat ? (
+                <WeChatPreview data={previewData} />
+              ) : (
+                <RedNotePreview data={previewData} />
+              )}
+            </div>
+
+            {/* Loading Overlay */}
+            {isGenerating && (
+              <div className={`
+                absolute inset-0 flex flex-col items-center justify-center z-50 rounded-[inherit]
+                ${device === DeviceMode.Phone ? 'bg-white/60 backdrop-blur-xl' : 'bg-white/50 backdrop-blur-lg'}
+              `}>
+                <div className={`
+                  w-16 h-16 rounded-2xl flex items-center justify-center mb-4
+                  ${isWeChat
+                    ? 'bg-gradient-to-br from-emerald-400 to-teal-500'
+                    : 'bg-gradient-to-br from-rose-400 to-pink-500'}
+                `}>
+                  <Wand2 className="w-7 h-7 text-white animate-pulse" />
+                </div>
+                <p className="text-sm font-semibold text-[#0a0a0f]">Creating your content...</p>
+                <p className="text-xs text-[#0a0a0f]/50 mt-1">AI is working its magic</p>
+              </div>
+            )}
+          </div>
         </div>
       </main>
     </div>
