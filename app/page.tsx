@@ -2,39 +2,173 @@
 
 import React, { useState, useRef } from 'react';
 import { Upload, Smartphone, Monitor, Wand2, MessageCircle, Heart, History, ChevronDown, Sparkles, Zap } from 'lucide-react';
-import { Platform, DeviceMode, PreviewData } from '@/types';
+import { Platform, DeviceMode, PreviewData, HistoryItem } from '@/types';
 import { STYLES, PRODUCTS, MOCK_HISTORY } from '@/lib/constants';
 import { WeChatPreview, RedNotePreview } from '@/components/PreviewRenderers';
 
-// Platform-specific styling helpers
-function getPlatformColors(isWeChat: boolean) {
-  return isWeChat
-    ? {
-        primary: 'emerald',
-        secondary: 'teal',
-        gradientFrom: 'from-emerald-400',
-        gradientTo: 'to-teal-500',
-        bgGradient: 'bg-gradient-to-r from-emerald-500 to-teal-500',
-        bgGradientHover: 'hover:from-emerald-400 hover:to-teal-400',
-        shadow: 'shadow-emerald-500/25',
-        bgClass: 'bg-mesh-gradient-wechat',
-        iconBg: 'bg-emerald-500/20',
-        iconText: 'text-emerald-400',
-        pillBg: 'bg-gradient-to-r from-emerald-500/30 to-teal-500/30 shadow-lg shadow-emerald-500/20',
-      }
-    : {
-        primary: 'rose',
-        secondary: 'pink',
-        gradientFrom: 'from-rose-400',
-        gradientTo: 'to-pink-500',
-        bgGradient: 'bg-gradient-to-r from-rose-500 to-pink-500',
-        bgGradientHover: 'hover:from-rose-400 hover:to-pink-400',
-        shadow: 'shadow-rose-500/25',
-        bgClass: 'bg-mesh-gradient-rednote',
-        iconBg: 'bg-rose-500/20',
-        iconText: 'text-rose-400',
-        pillBg: 'bg-gradient-to-r from-rose-500/30 to-pink-500/30 shadow-lg shadow-rose-500/20',
-      };
+// Platform-specific styling configuration
+const PLATFORM_COLORS = {
+  [Platform.WeChat]: {
+    primary: 'emerald',
+    secondary: 'teal',
+    gradientFrom: 'from-emerald-400',
+    gradientTo: 'to-teal-500',
+    bgGradient: 'bg-gradient-to-r from-emerald-500 to-teal-500',
+    bgGradientHover: 'hover:from-emerald-400 hover:to-teal-400',
+    shadow: 'shadow-emerald-500/25',
+    bgClass: 'bg-mesh-gradient-wechat',
+    iconBg: 'bg-emerald-500/20',
+    iconText: 'text-emerald-400',
+    pillBg: 'bg-gradient-to-r from-emerald-500/30 to-teal-500/30 shadow-lg shadow-emerald-500/20',
+    glowClass: 'glow-wechat',
+  },
+  [Platform.RedNote]: {
+    primary: 'rose',
+    secondary: 'pink',
+    gradientFrom: 'from-rose-400',
+    gradientTo: 'to-pink-500',
+    bgGradient: 'bg-gradient-to-r from-rose-500 to-pink-500',
+    bgGradientHover: 'hover:from-rose-400 hover:to-pink-400',
+    shadow: 'shadow-rose-500/25',
+    bgClass: 'bg-mesh-gradient-rednote',
+    iconBg: 'bg-rose-500/20',
+    iconText: 'text-rose-400',
+    pillBg: 'bg-gradient-to-r from-rose-500/30 to-pink-500/30 shadow-lg shadow-rose-500/20',
+    glowClass: 'glow-rednote',
+  },
+} as const;
+
+function getPlatformColors(platform: Platform) {
+  return PLATFORM_COLORS[platform];
+}
+
+interface PlatformToggleProps {
+  currentPlatform: Platform;
+  onPlatformChange: (platform: Platform) => void;
+}
+
+function PlatformToggle({ currentPlatform, onPlatformChange }: PlatformToggleProps) {
+  const isWeChat = currentPlatform === Platform.WeChat;
+  const colors = getPlatformColors(currentPlatform);
+
+  return (
+    <div className="relative">
+      <div className="glass rounded-2xl p-1.5 flex relative">
+        <div
+          className={`absolute top-1.5 h-[calc(100%-12px)] w-[calc(50%-6px)] rounded-xl transition-all duration-500 ease-out ${
+            isWeChat ? 'left-1.5' : 'left-[calc(50%+1.5px)]'
+          } ${colors.pillBg}`}
+        />
+        <button
+          onClick={() => onPlatformChange(Platform.WeChat)}
+          className={`flex-1 py-3 px-4 rounded-xl text-sm font-semibold z-10 transition-all duration-300 flex items-center justify-center gap-2 ${
+            isWeChat ? colors.iconText : 'text-white/50 hover:text-white/70'
+          }`}
+        >
+          <MessageCircle size={16} className={isWeChat ? 'fill-emerald-400/30' : ''} />
+          WeChat
+        </button>
+        <button
+          onClick={() => onPlatformChange(Platform.RedNote)}
+          className={`flex-1 py-3 px-4 rounded-xl text-sm font-semibold z-10 transition-all duration-300 flex items-center justify-center gap-2 ${
+            !isWeChat ? colors.iconText : 'text-white/50 hover:text-white/70'
+          }`}
+        >
+          <Heart size={16} className={!isWeChat ? 'fill-rose-400/30' : ''} />
+          RedNote
+        </button>
+      </div>
+    </div>
+  );
+}
+
+interface DeviceToggleButtonProps {
+  currentDevice: DeviceMode;
+  targetDevice: DeviceMode;
+  onDeviceChange: (device: DeviceMode) => void;
+  icon: React.ComponentType<{ size?: number }>;
+  title: string;
+}
+
+function DeviceToggleButton({ currentDevice, targetDevice, onDeviceChange, icon: Icon, title }: DeviceToggleButtonProps) {
+  const isActive = currentDevice === targetDevice;
+
+  return (
+    <button
+      onClick={() => onDeviceChange(targetDevice)}
+      className={`p-2.5 rounded-lg transition-all duration-300 ${
+        isActive
+          ? 'bg-white/15 text-white shadow-sm'
+          : 'text-white/40 hover:text-white/70 hover:bg-white/5'
+      }`}
+      title={title}
+    >
+      <Icon size={16} />
+    </button>
+  );
+}
+
+interface DeviceToggleProps {
+  currentDevice: DeviceMode;
+  onDeviceChange: (device: DeviceMode) => void;
+}
+
+function DeviceToggle({ currentDevice, onDeviceChange }: DeviceToggleProps) {
+  return (
+    <div className="glass rounded-xl p-1 flex gap-1">
+      <DeviceToggleButton
+        currentDevice={currentDevice}
+        targetDevice={DeviceMode.Web}
+        onDeviceChange={onDeviceChange}
+        icon={Monitor}
+        title="Desktop View"
+      />
+      <DeviceToggleButton
+        currentDevice={currentDevice}
+        targetDevice={DeviceMode.Phone}
+        onDeviceChange={onDeviceChange}
+        icon={Smartphone}
+        title="Mobile View"
+      />
+    </div>
+  );
+}
+
+interface HistoryItemCardProps {
+  item: HistoryItem;
+  index: number;
+}
+
+function HistoryItemCard({ item, index }: HistoryItemCardProps) {
+  const isWeChat = item.platform === Platform.WeChat;
+
+  return (
+    <div
+      key={item.id}
+      className="group flex items-center p-3 rounded-xl glass hover:bg-white/10 transition-all cursor-pointer gap-3"
+      style={{ animationDelay: `${375 + index * 50}ms` }}
+    >
+      <div
+        className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 transition-all ${
+          isWeChat
+            ? 'bg-emerald-500/20 text-emerald-400 group-hover:bg-emerald-500/30'
+            : 'bg-rose-500/20 text-rose-400 group-hover:bg-rose-500/30'
+        }`}
+      >
+        {isWeChat ? (
+          <MessageCircle size={16} className="fill-current opacity-60" />
+        ) : (
+          <Heart size={16} className="fill-current opacity-60" />
+        )}
+      </div>
+      <div className="flex flex-col min-w-0 flex-1">
+        <span className="font-medium text-xs text-white/80 truncate group-hover:text-white transition-colors">
+          {item.title}
+        </span>
+        <span className="text-[10px] text-white/40 mt-0.5">{item.timestamp}</span>
+      </div>
+    </div>
+  );
 }
 
 export default function Home() {
@@ -49,8 +183,7 @@ export default function Home() {
   const [isGenerating, setIsGenerating] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const isWeChat = platform === Platform.WeChat;
-  const colors = getPlatformColors(isWeChat);
+  const colors = getPlatformColors(platform);
 
   function handleImageUpload(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -79,7 +212,7 @@ export default function Home() {
         {/* Header with Logo */}
         <div className="px-6 pt-6 pb-4">
           <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-500 ${colors.gradientFrom} ${colors.gradientTo} ${isWeChat ? 'glow-wechat' : 'glow-rednote'}`}>
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-500 ${colors.gradientFrom} ${colors.gradientTo} ${colors.glowClass}`}>
               <Sparkles className="w-5 h-5 text-white" />
             </div>
             <div>
@@ -95,26 +228,7 @@ export default function Home() {
         <div className="flex-1 overflow-y-auto px-6 pb-6 space-y-6 scrollbar-hide">
 
           {/* Platform Toggle */}
-          <div className="relative">
-            <div className="glass rounded-2xl p-1.5 flex relative">
-              {/* Animated Background Pill */}
-              <div className={`absolute top-1.5 h-[calc(100%-12px)] w-[calc(50%-6px)] rounded-xl transition-all duration-500 ease-out ${isWeChat ? 'left-1.5' : 'left-[calc(50%+1.5px)]'} ${colors.pillBg}`} />
-              <button
-                onClick={() => setPlatform(Platform.WeChat)}
-                className={`flex-1 py-3 px-4 rounded-xl text-sm font-semibold z-10 transition-all duration-300 flex items-center justify-center gap-2 ${isWeChat ? colors.iconText : 'text-white/50 hover:text-white/70'}`}
-              >
-                <MessageCircle size={16} className={isWeChat ? 'fill-emerald-400/30' : ''} />
-                WeChat
-              </button>
-              <button
-                onClick={() => setPlatform(Platform.RedNote)}
-                className={`flex-1 py-3 px-4 rounded-xl text-sm font-semibold z-10 transition-all duration-300 flex items-center justify-center gap-2 ${!isWeChat ? colors.iconText : 'text-white/50 hover:text-white/70'}`}
-              >
-                <Heart size={16} className={!isWeChat ? 'fill-rose-400/30' : ''} />
-                RedNote
-              </button>
-            </div>
-          </div>
+          <PlatformToggle currentPlatform={platform} onPlatformChange={setPlatform} />
 
           {/* Configuration Cards */}
           <div className="space-y-4">
@@ -230,25 +344,7 @@ export default function Home() {
             </div>
             <div className="space-y-2">
               {MOCK_HISTORY.map((item, idx) => (
-                <div
-                  key={item.id}
-                  className="group flex items-center p-3 rounded-xl glass hover:bg-white/10 transition-all cursor-pointer gap-3"
-                  style={{ animationDelay: `${375 + idx * 50}ms` }}
-                >
-                  <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 transition-all ${item.platform === Platform.WeChat ? 'bg-emerald-500/20 text-emerald-400 group-hover:bg-emerald-500/30' : 'bg-rose-500/20 text-rose-400 group-hover:bg-rose-500/30'}`}>
-                    {item.platform === Platform.WeChat ? (
-                      <MessageCircle size={16} className="fill-current opacity-60" />
-                    ) : (
-                      <Heart size={16} className="fill-current opacity-60" />
-                    )}
-                  </div>
-                  <div className="flex flex-col min-w-0 flex-1">
-                    <span className="font-medium text-xs text-white/80 truncate group-hover:text-white transition-colors">
-                      {item.title}
-                    </span>
-                    <span className="text-[10px] text-white/40 mt-0.5">{item.timestamp}</span>
-                  </div>
-                </div>
+                <HistoryItemCard key={item.id} item={item} index={idx} />
               ))}
             </div>
           </div>
@@ -292,32 +388,7 @@ export default function Home() {
 
         {/* Device Toggle */}
         <div className="absolute top-6 right-6 z-20">
-          <div className="glass rounded-xl p-1 flex gap-1">
-            <button
-              onClick={() => setDevice(DeviceMode.Web)}
-              className={`
-                p-2.5 rounded-lg transition-all duration-300
-                ${device === DeviceMode.Web
-                  ? 'bg-white/15 text-white shadow-sm'
-                  : 'text-white/40 hover:text-white/70 hover:bg-white/5'}
-              `}
-              title="Desktop View"
-            >
-              <Monitor size={16} />
-            </button>
-            <button
-              onClick={() => setDevice(DeviceMode.Phone)}
-              className={`
-                p-2.5 rounded-lg transition-all duration-300
-                ${device === DeviceMode.Phone
-                  ? 'bg-white/15 text-white shadow-sm'
-                  : 'text-white/40 hover:text-white/70 hover:bg-white/5'}
-              `}
-              title="Mobile View"
-            >
-              <Smartphone size={16} />
-            </button>
-          </div>
+          <DeviceToggle currentDevice={device} onDeviceChange={setDevice} />
         </div>
 
         {/* Preview Container */}

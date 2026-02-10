@@ -9,11 +9,80 @@ interface RendererProps {
 }
 
 // ==========================================
+// Shared Components
+// ==========================================
+
+interface AvatarProps {
+  src: string;
+  alt: string;
+  size?: 'sm' | 'md' | 'lg';
+  rounded?: 'full' | 'lg' | 'none';
+}
+
+function Avatar({ src, alt, size = 'md', rounded = 'full' }: AvatarProps) {
+  const sizeClasses = {
+    sm: 'w-8 h-8',
+    md: 'w-10 h-10',
+    lg: 'w-16 h-16',
+  };
+  const roundedClasses = {
+    full: 'rounded-full',
+    lg: 'rounded-lg',
+    none: 'rounded-none',
+  };
+
+  return (
+    <div className={`${sizeClasses[size]} ${roundedClasses[rounded]} overflow-hidden`}>
+      <img src={src} alt={alt} className="w-full h-full object-cover" />
+    </div>
+  );
+}
+
+interface CommentProps {
+  avatar: string;
+  author: string;
+  text: string;
+}
+
+function Comment({ avatar, author, text }: CommentProps) {
+  return (
+    <div className="flex gap-3">
+      <Avatar src={avatar} alt={author} size="sm" />
+      <div className="flex-1">
+        <div className="text-xs text-gray-500 mb-0.5">{author}</div>
+        <div className="text-sm text-gray-800">{text}</div>
+      </div>
+      <Heart size={14} className="text-gray-300 flex-shrink-0 mt-1" />
+    </div>
+  );
+}
+
+// Helper to format time string
+function formatCurrentTime(): string {
+  const now = new Date();
+  return `${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`;
+}
+
+interface FooterButtonProps {
+  icon: React.ComponentType<{ size?: number; className?: string }>;
+  iconColor: string;
+  count: string;
+}
+
+function FooterButton({ icon: Icon, iconColor, count }: FooterButtonProps) {
+  return (
+    <div className="flex flex-col items-center">
+      <Icon size={22} className={iconColor} />
+      <span className="text-[10px] font-medium text-gray-600 mt-0.5">{count}</span>
+    </div>
+  );
+}
+
+// ==========================================
 // WeChat Moments Preview
 // ==========================================
 export function WeChatPreview({ data }: RendererProps) {
-  const currentDate = new Date();
-  const timeString = `${currentDate.getHours()}:${currentDate.getMinutes().toString().padStart(2, '0')}`;
+  const timeString = formatCurrentTime();
 
   return (
     <div className="bg-white h-full w-full flex flex-col font-sans text-gray-900">
@@ -53,8 +122,13 @@ export function WeChatPreview({ data }: RendererProps) {
           />
           <div className="absolute bottom-4 right-4 flex items-end gap-3">
             <span className="text-white font-semibold text-base drop-shadow-lg">Jane Doe</span>
-            <div className="w-16 h-16 rounded-lg overflow-hidden ring-2 ring-white shadow-lg">
-              <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&q=80" alt="Avatar" className="w-full h-full object-cover" />
+            <div className="ring-2 ring-white shadow-lg">
+              <Avatar
+                src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&q=80"
+                alt="Avatar"
+                size="lg"
+                rounded="lg"
+              />
             </div>
           </div>
         </div>
@@ -64,9 +138,12 @@ export function WeChatPreview({ data }: RendererProps) {
           <div className="flex gap-3">
             {/* Avatar */}
             <div className="flex-shrink-0">
-              <div className="w-10 h-10 rounded overflow-hidden">
-                <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&q=80" alt="Avatar" className="w-full h-full object-cover" />
-              </div>
+              <Avatar
+                src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&q=80"
+                alt="Avatar"
+                size="md"
+                rounded="lg"
+              />
             </div>
 
             {/* Content */}
@@ -129,6 +206,13 @@ export function WeChatPreview({ data }: RendererProps) {
 export function RedNotePreview({ data }: RendererProps) {
   const currentDate = new Date();
 
+  // Helper for truncating title
+  const truncatedTitle = data.prompt
+    ? data.prompt.slice(0, 24) + (data.prompt.length > 24 ? '...' : '')
+    : "✨ 必入好物 | 绝绝子的氛围感神器";
+
+  const displayImage = data.image || "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800&q=80";
+
   return (
     <div className="bg-white h-full w-full flex flex-col font-sans text-gray-900 relative">
       {/* Header */}
@@ -144,15 +228,7 @@ export function RedNotePreview({ data }: RendererProps) {
       <div className="flex-1 overflow-y-auto">
         {/* Main Image */}
         <div className="w-full aspect-[3/4] bg-gray-100 relative">
-          {data.image ? (
-            <img src={data.image} alt="Main" className="w-full h-full object-cover" />
-          ) : (
-            <img
-              src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800&q=80"
-              alt="Main"
-              className="w-full h-full object-cover"
-            />
-          )}
+          <img src={displayImage} alt="Main" className="w-full h-full object-cover" />
           {/* Pagination */}
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5">
             <div className="w-1.5 h-1.5 rounded-full bg-white" />
@@ -164,13 +240,10 @@ export function RedNotePreview({ data }: RendererProps) {
         <div className="p-4">
           {/* Author */}
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-full overflow-hidden">
-              <img
-                src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&q=80"
-                alt="Author"
-                className="w-full h-full object-cover"
-              />
-            </div>
+            <Avatar
+              src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&q=80"
+              alt="Author"
+            />
             <div className="flex-1">
               <div className="font-semibold text-sm text-gray-900">时尚达人小红</div>
               <div className="text-xs text-gray-400">2小时前</div>
@@ -182,7 +255,7 @@ export function RedNotePreview({ data }: RendererProps) {
 
           {/* Title */}
           <h1 className="text-lg font-bold text-gray-900 mb-3 leading-snug">
-            {data.prompt ? data.prompt.slice(0, 24) + (data.prompt.length > 24 ? '...' : '') : "✨ 必入好物 | 绝绝子的氛围感神器"}
+            {truncatedTitle}
           </h1>
 
           {/* Description */}
@@ -209,26 +282,16 @@ export function RedNotePreview({ data }: RendererProps) {
 
           {/* Comments */}
           <div className="space-y-4">
-            <div className="flex gap-3">
-              <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
-                <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&q=80" className="w-full h-full object-cover" alt="Commenter" />
-              </div>
-              <div className="flex-1">
-                <div className="text-xs text-gray-500 mb-0.5">爱购物的小仙女</div>
-                <div className="text-sm text-gray-800">姐妹求链接！这也太好看了吧 😍</div>
-              </div>
-              <Heart size={14} className="text-gray-300 flex-shrink-0 mt-1" />
-            </div>
-            <div className="flex gap-3">
-              <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
-                <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&q=80" className="w-full h-full object-cover" alt="Commenter" />
-              </div>
-              <div className="flex-1">
-                <div className="text-xs text-gray-500 mb-0.5">时尚研究所</div>
-                <div className="text-sm text-gray-800">已加购！期待收货 ✨</div>
-              </div>
-              <Heart size={14} className="text-gray-300 flex-shrink-0 mt-1" />
-            </div>
+            <Comment
+              avatar="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&q=80"
+              author="爱购物的小仙女"
+              text="姐妹求链接！这也太好看了吧 😍"
+            />
+            <Comment
+              avatar="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&q=80"
+              author="时尚研究所"
+              text="已加购！期待收货 ✨"
+            />
           </div>
         </div>
       </div>
@@ -239,18 +302,9 @@ export function RedNotePreview({ data }: RendererProps) {
           <span className="text-xs text-gray-400">说点什么...</span>
         </div>
         <div className="flex items-center gap-6">
-          <div className="flex flex-col items-center">
-            <Heart size={22} className="text-[#FF2442] fill-[#FF2442]" />
-            <span className="text-[10px] font-medium text-gray-600 mt-0.5">2.3k</span>
-          </div>
-          <div className="flex flex-col items-center">
-            <Star size={22} className="text-[#FAA61A] fill-[#FAA61A]" />
-            <span className="text-[10px] font-medium text-gray-600 mt-0.5">1.8k</span>
-          </div>
-          <div className="flex flex-col items-center">
-            <MessageCircle size={22} className="text-gray-600" />
-            <span className="text-[10px] font-medium text-gray-600 mt-0.5">456</span>
-          </div>
+          <FooterButton icon={Heart} iconColor="text-[#FF2442] fill-[#FF2442]" count="2.3k" />
+          <FooterButton icon={Star} iconColor="text-[#FAA61A] fill-[#FAA61A]" count="1.8k" />
+          <FooterButton icon={MessageCircle} iconColor="text-gray-600" count="456" />
         </div>
       </div>
     </div>
