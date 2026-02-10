@@ -7,7 +7,9 @@
       "Bash(git commit -m \"$\\(cat <<''EOF''\nUpdate code - 2026-02-09\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nEOF\n\\)\")",
       "Bash(npx tsc:*)",
       "Bash(git symbolic-ref:*)",
-      "Bash(git commit -m \"$\\(cat <<''EOF''\nSimplify and refactor codebase for better maintainability\n\n- Extract platform-specific colors into helper function in page.tsx\n- Consolidate CSS and remove redundant animations in globals.css\n- Add explicit RootLayoutProps interface for type documentation\n- Standardize indentation to 2-space across components\n- Convert enum to const assertions for better TypeScript inference\n- Add as const for improved type safety in constants\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nEOF\n\\)\")"
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nSimplify and refactor codebase for better maintainability\n\n- Extract platform-specific colors into helper function in page.tsx\n- Consolidate CSS and remove redundant animations in globals.css\n- Add explicit RootLayoutProps interface for type documentation\n- Standardize indentation to 2-space across components\n- Convert enum to const assertions for better TypeScript inference\n- Add as const for improved type safety in constants\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git push:*)",
+      "Bash(git commit:*)"
     ]
   }
 }
