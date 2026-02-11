@@ -34,12 +34,20 @@ export async function POST(request: Request) {
         const body = await request.json();
         const { title, platform, style, product } = body;
 
+        if (typeof title !== 'string' || title.trim().length === 0) {
+            return NextResponse.json({ error: 'Title is required' }, { status: 400 });
+        }
+
+        if (typeof platform !== 'string' || platform.trim().length === 0) {
+            return NextResponse.json({ error: 'Platform is required' }, { status: 400 });
+        }
+
         const conversation = await prisma.conversation.create({
             data: {
-                title,
-                platform,
-                style: style || null,
-                product: product || null,
+                title: title.trim(),
+                platform: platform.trim(),
+                style: typeof style === 'string' && style.trim().length > 0 ? style.trim() : null,
+                product: typeof product === 'string' && product.trim().length > 0 ? product.trim() : null,
             },
         });
 

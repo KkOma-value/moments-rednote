@@ -15,6 +15,11 @@ export async function GET(
     try {
         const prisma = await getPrisma();
         const { id } = await params;
+
+        if (!id || typeof id !== 'string') {
+            return NextResponse.json({ error: 'Conversation id is required' }, { status: 400 });
+        }
+
         const messages = await prisma.message.findMany({
             where: { conversationId: id },
             orderBy: { createdAt: 'asc' },
@@ -37,12 +42,28 @@ export async function POST(
         const body = await request.json();
         const { role, content, images } = body;
 
+        if (!id || typeof id !== 'string') {
+            return NextResponse.json({ error: 'Conversation id is required' }, { status: 400 });
+        }
+
+        if (typeof role !== 'string' || role.trim().length === 0) {
+            return NextResponse.json({ error: 'Role is required' }, { status: 400 });
+        }
+
+        if (typeof content !== 'string' || content.trim().length === 0) {
+            return NextResponse.json({ error: 'Content is required' }, { status: 400 });
+        }
+
+        if (images !== undefined && !Array.isArray(images)) {
+            return NextResponse.json({ error: 'Images must be an array' }, { status: 400 });
+        }
+
         const message = await prisma.message.create({
             data: {
                 conversationId: id,
-                role,
-                content,
-                images: images || [],
+                role: role.trim(),
+                content: content.trim(),
+                images: Array.isArray(images) ? images : [],
             },
         });
 

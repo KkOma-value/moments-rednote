@@ -2,6 +2,31 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
+### Environment
+
+Create a `.env` file and set these values:
+
+```bash
+DATABASE_URL="postgresql://..."
+DIRECT_URL="postgresql://..."
+BLOB_READ_WRITE_TOKEN="..."
+```
+
+### Database
+
+Generate Prisma Client and apply schema changes:
+
+```bash
+npm run prisma:generate
+npm run prisma:push
+```
+
+If you prefer migrations instead of `db push`:
+
+```bash
+npm run prisma:migrate
+```
+
 First, run the development server:
 
 ```bash
