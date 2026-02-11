@@ -183,6 +183,24 @@ const prisma = new PrismaClient({ adapter });
 | Prisma Client 运行时 | `DATABASE_URL` | 6543 | Transaction Pooler，加 `?pgbouncer=true` |
 | Prisma CLI (migrate/push) | `DIRECT_URL` | 5432 | Session Pooler 或直连 |
 
+### 6. 线上构建必须先执行 `prisma generate`
+
+**问题**: Vercel 等平台部署时 `npm run build` 报错 `Module '"@prisma/client"' has no exported member 'PrismaClient'`。
+
+**原因**: Prisma v7 的类型定义和运行时代码在 `npm install` 后不会自动生成到 `node_modules/.prisma/client`，必须先执行 `prisma generate`。线上构建只运行 `next build` 会导致 TypeScript 找不到导出。
+
+**正确做法**: 在 `package.json` 中加双重保障：
+```json
+{
+  "scripts": {
+    "build": "prisma generate && next build",
+    "postinstall": "prisma generate"
+  }
+}
+```
+- `build` 脚本前置 `prisma generate`，确保构建前生成
+- `postinstall` 在 `npm install` 完成后自动生成（适配 Vercel 等 CI 平台）
+
 ## 项目启动检查清单
 
 1. 复制 `env.example` 为 `.env`，填写真实密码
