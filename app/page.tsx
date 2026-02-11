@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import { Upload, Smartphone, Monitor, Wand2, MessageCircle, Heart, History, ChevronDown, Sparkles, Zap } from 'lucide-react';
+import { Upload, Smartphone, Monitor, Wand2, MessageCircle, Heart, History, ChevronDown, Sparkles, Zap, X, Loader2 } from 'lucide-react';
 import { Platform, DeviceMode, PreviewData, HistoryItem } from '@/types';
 import { STYLES, PRODUCTS, MOCK_HISTORY } from '@/lib/constants';
 import { WeChatPreview, RedNotePreview } from '@/components/PreviewRenderers';
@@ -55,24 +55,21 @@ function PlatformToggle({ currentPlatform, onPlatformChange }: PlatformTogglePro
     <div className="relative">
       <div className="glass rounded-2xl p-1.5 flex relative">
         <div
-          className={`absolute top-1.5 h-[calc(100%-12px)] w-[calc(50%-6px)] rounded-xl transition-all duration-500 ease-out ${
-            isWeChat ? 'left-1.5' : 'left-[calc(50%+1.5px)]'
-          } ${colors.pillBg}`}
+          className={`absolute top-1.5 h-[calc(100%-12px)] w-[calc(50%-6px)] rounded-xl transition-all duration-500 ease-out ${isWeChat ? 'left-1.5' : 'left-[calc(50%+1.5px)]'
+            } ${colors.pillBg}`}
         />
         <button
           onClick={() => onPlatformChange(Platform.WeChat)}
-          className={`flex-1 py-3 px-4 rounded-xl text-sm font-semibold z-10 transition-all duration-300 flex items-center justify-center gap-2 ${
-            isWeChat ? colors.iconText : 'text-white/50 hover:text-white/70'
-          }`}
+          className={`flex-1 py-3 px-4 rounded-xl text-sm font-semibold z-10 transition-all duration-300 flex items-center justify-center gap-2 ${isWeChat ? colors.iconText : 'text-white/50 hover:text-white/70'
+            }`}
         >
           <MessageCircle size={16} className={isWeChat ? 'fill-emerald-400/30' : ''} />
           WeChat
         </button>
         <button
           onClick={() => onPlatformChange(Platform.RedNote)}
-          className={`flex-1 py-3 px-4 rounded-xl text-sm font-semibold z-10 transition-all duration-300 flex items-center justify-center gap-2 ${
-            !isWeChat ? colors.iconText : 'text-white/50 hover:text-white/70'
-          }`}
+          className={`flex-1 py-3 px-4 rounded-xl text-sm font-semibold z-10 transition-all duration-300 flex items-center justify-center gap-2 ${!isWeChat ? colors.iconText : 'text-white/50 hover:text-white/70'
+            }`}
         >
           <Heart size={16} className={!isWeChat ? 'fill-rose-400/30' : ''} />
           RedNote
@@ -96,11 +93,10 @@ function DeviceToggleButton({ currentDevice, targetDevice, onDeviceChange, icon:
   return (
     <button
       onClick={() => onDeviceChange(targetDevice)}
-      className={`p-2.5 rounded-lg transition-all duration-300 ${
-        isActive
+      className={`p-2.5 rounded-lg transition-all duration-300 ${isActive
           ? 'bg-white/15 text-white shadow-sm'
           : 'text-white/40 hover:text-white/70 hover:bg-white/5'
-      }`}
+        }`}
       title={title}
     >
       <Icon size={16} />
@@ -149,11 +145,10 @@ function HistoryItemCard({ item, index }: HistoryItemCardProps) {
       style={{ animationDelay: `${375 + index * 50}ms` }}
     >
       <div
-        className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 transition-all ${
-          isWeChat
+        className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 transition-all ${isWeChat
             ? 'bg-emerald-500/20 text-emerald-400 group-hover:bg-emerald-500/30'
             : 'bg-rose-500/20 text-rose-400 group-hover:bg-rose-500/30'
-        }`}
+          }`}
       >
         {isWeChat ? (
           <MessageCircle size={16} className="fill-current opacity-60" />
@@ -175,25 +170,66 @@ export default function Home() {
   const [platform, setPlatform] = useState<Platform>(Platform.WeChat);
   const [device, setDevice] = useState<DeviceMode>(DeviceMode.Phone);
   const [previewData, setPreviewData] = useState<PreviewData>({
-    image: null,
-    style: STYLES[0].value,
-    product: PRODUCTS[0].value,
+    images: [],
+    style: '',
+    product: '',
     prompt: '',
   });
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const colors = getPlatformColors(platform);
 
-  function handleImageUpload(event: React.ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    if (!file) return;
+  async function handleImageUpload(event: React.ChangeEvent<HTMLInputElement>) {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setPreviewData(prev => ({ ...prev, image: reader.result as string }));
-    };
-    reader.readAsDataURL(file);
+    setIsUploading(true);
+
+    try {
+      const formData = new FormData();
+      for (let i = 0; i < files.length; i++) {
+        formData.append('files', files[i]);
+      }
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Upload failed');
+      }
+
+      const data = await response.json();
+      const newUrls = data.blobs.map((blob: { url: string }) => blob.url);
+
+      setPreviewData(prev => ({
+        ...prev,
+        images: [...prev.images, ...newUrls],
+      }));
+    } catch (error) {
+      console.error('Upload error:', error);
+      alert('图片上传失败，请重试');
+    } finally {
+      setIsUploading(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  }
+
+  function handleRemoveImage(index: number) {
+    setPreviewData(prev => ({
+      ...prev,
+      images: prev.images.filter((_, i) => i !== index),
+    }));
+  }
+
+  function handleClearAllImages() {
+    setPreviewData(prev => ({ ...prev, images: [] }));
   }
 
   function handleGenerate() {
@@ -233,25 +269,30 @@ export default function Home() {
           {/* Configuration Cards */}
           <div className="space-y-4">
 
-            {/* Image Upload */}
+            {/* Image Upload — Multi-Image */}
             <div className="space-y-2 animate-in delay-75">
               <label className="flex items-center justify-between text-[10px] uppercase tracking-widest font-semibold text-white/40">
-                <span>Visual Asset</span>
-                {previewData.image && (
+                <span>Visual Assets {previewData.images.length > 0 && `(${previewData.images.length})`}</span>
+                {previewData.images.length > 0 && (
                   <button
-                    onClick={() => setPreviewData(prev => ({ ...prev, image: null }))}
+                    onClick={handleClearAllImages}
                     className="text-rose-400/70 hover:text-rose-400 transition-colors normal-case tracking-normal"
                   >
-                    Remove
+                    Clear All
                   </button>
                 )}
               </label>
+
+              {/* Upload Area */}
               <div
-                onClick={() => fileInputRef.current?.click()}
+                onClick={() => !isUploading && fileInputRef.current?.click()}
                 className={`
-                  relative h-36 w-full rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 group
-                  ${previewData.image
-                    ? 'ring-2 ring-white/10'
+                  relative w-full rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 group
+                  ${previewData.images.length > 0
+                    ? 'min-h-[80px]'
+                    : 'h-36'}
+                  ${isUploading
+                    ? 'opacity-60 cursor-wait'
                     : 'glass hover:bg-white/10 border border-dashed border-white/15 hover:border-white/25'}
                 `}
               >
@@ -260,30 +301,64 @@ export default function Home() {
                   ref={fileInputRef}
                   className="hidden"
                   accept="image/*"
+                  multiple
                   onChange={handleImageUpload}
                 />
-                {previewData.image ? (
-                  <>
-                    <img
-                      src={previewData.image}
-                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                      alt="Preview"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <div className="glass px-4 py-2 rounded-xl text-xs font-medium text-white transform translate-y-2 group-hover:translate-y-0 transition-transform">
-                        Replace Image
+
+                {previewData.images.length > 0 ? (
+                  /* Image Grid Thumbnails */
+                  <div className="p-3">
+                    <div className="grid grid-cols-3 gap-2">
+                      {previewData.images.map((url, idx) => (
+                        <div key={idx} className="relative aspect-square rounded-lg overflow-hidden group/thumb">
+                          <img
+                            src={url}
+                            className="w-full h-full object-cover"
+                            alt={`Upload ${idx + 1}`}
+                          />
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRemoveImage(idx);
+                            }}
+                            className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 flex items-center justify-center opacity-0 group-hover/thumb:opacity-100 transition-opacity hover:bg-red-500"
+                          >
+                            <X size={10} className="text-white" />
+                          </button>
+                        </div>
+                      ))}
+                      {/* Add More Button */}
+                      <div
+                        className={`aspect-square rounded-lg border border-dashed border-white/20 flex items-center justify-center hover:border-white/40 transition-colors ${colors.iconText}`}
+                      >
+                        {isUploading ? (
+                          <Loader2 size={18} className="animate-spin" />
+                        ) : (
+                          <Upload size={18} />
+                        )}
                       </div>
                     </div>
-                  </>
+                  </div>
                 ) : (
                   <div className="h-full flex flex-col items-center justify-center gap-3">
-                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300 group-hover:scale-110 ${colors.iconBg} ${colors.iconText}`}>
-                      <Upload className="w-5 h-5" />
-                    </div>
-                    <div className="text-center">
-                      <p className="text-sm font-medium text-white/70">Drop your image here</p>
-                      <p className="text-xs text-white/40 mt-0.5">or click to browse</p>
-                    </div>
+                    {isUploading ? (
+                      <>
+                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${colors.iconBg} ${colors.iconText}`}>
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                        </div>
+                        <p className="text-sm font-medium text-white/70">Uploading...</p>
+                      </>
+                    ) : (
+                      <>
+                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300 group-hover:scale-110 ${colors.iconBg} ${colors.iconText}`}>
+                          <Upload className="w-5 h-5" />
+                        </div>
+                        <div className="text-center">
+                          <p className="text-sm font-medium text-white/70">Drop your images here</p>
+                          <p className="text-xs text-white/40 mt-0.5">supports multiple files</p>
+                        </div>
+                      </>
+                    )}
                   </div>
                 )}
               </div>
@@ -297,9 +372,19 @@ export default function Home() {
                   <select
                     value={previewData.style}
                     onChange={(e) => setPreviewData(prev => ({ ...prev, style: e.target.value }))}
-                    className="input-glass w-full appearance-none pl-4 pr-10 py-3 text-sm font-medium text-white cursor-pointer"
+                    className={`input-glass w-full appearance-none pl-4 pr-10 py-3 text-sm font-medium cursor-pointer ${previewData.style === '' ? 'text-white/40 italic' : 'text-white'
+                      }`}
                   >
-                    {STYLES.map(s => <option key={s.value} value={s.value} className="bg-[#0a0a0f] text-white">{s.label}</option>)}
+                    {STYLES.map(s => (
+                      <option
+                        key={s.value}
+                        value={s.value}
+                        className="bg-[#0a0a0f] text-white"
+                        disabled={s.value === ''}
+                      >
+                        {s.label}
+                      </option>
+                    ))}
                   </select>
                   <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 pointer-events-none group-hover:text-white/50 transition-colors" />
                 </div>
@@ -311,9 +396,19 @@ export default function Home() {
                   <select
                     value={previewData.product}
                     onChange={(e) => setPreviewData(prev => ({ ...prev, product: e.target.value }))}
-                    className="input-glass w-full appearance-none pl-4 pr-10 py-3 text-sm font-medium text-white cursor-pointer"
+                    className={`input-glass w-full appearance-none pl-4 pr-10 py-3 text-sm font-medium cursor-pointer ${previewData.product === '' ? 'text-white/40 italic' : 'text-white'
+                      }`}
                   >
-                    {PRODUCTS.map(p => <option key={p.value} value={p.value} className="bg-[#0a0a0f] text-white">{p.label}</option>)}
+                    {PRODUCTS.map(p => (
+                      <option
+                        key={p.value}
+                        value={p.value}
+                        className="bg-[#0a0a0f] text-white"
+                        disabled={p.value === ''}
+                      >
+                        {p.label}
+                      </option>
+                    ))}
                   </select>
                   <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 pointer-events-none group-hover:text-white/50 transition-colors" />
                 </div>

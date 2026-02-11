@@ -78,11 +78,20 @@ function FooterButton({ icon: Icon, iconColor, count }: FooterButtonProps) {
   );
 }
 
+// Helper: get grid class based on image count (WeChat style)
+function getWeChatGridClass(count: number): string {
+  if (count === 1) return 'grid-cols-1 max-w-[65%]';
+  if (count === 2) return 'grid-cols-2 max-w-[75%]';
+  if (count === 4) return 'grid-cols-2 max-w-[75%]';
+  return 'grid-cols-3 max-w-[85%]';
+}
+
 // ==========================================
 // WeChat Moments Preview
 // ==========================================
 export function WeChatPreview({ data }: RendererProps) {
   const timeString = formatCurrentTime();
+  const hasImages = data.images.length > 0;
 
   return (
     <div className="bg-white h-full w-full flex flex-col font-sans text-gray-900">
@@ -155,8 +164,14 @@ export function WeChatPreview({ data }: RendererProps) {
 
               {/* Image Grid */}
               <div className="mb-3">
-                {data.image ? (
-                  <img src={data.image} alt="Upload" className="max-w-[85%] max-h-60 object-cover rounded" />
+                {hasImages ? (
+                  <div className={`grid gap-1 ${getWeChatGridClass(data.images.length)}`}>
+                    {data.images.slice(0, 9).map((url, i) => (
+                      <div key={i} className="aspect-square bg-gray-100 overflow-hidden">
+                        <img src={url} className="w-full h-full object-cover" alt={`Upload ${i + 1}`} />
+                      </div>
+                    ))}
+                  </div>
                 ) : (
                   <div className="grid grid-cols-3 gap-1 max-w-[85%]">
                     {[1, 2, 3].map((i) => (
@@ -205,13 +220,16 @@ export function WeChatPreview({ data }: RendererProps) {
 // ==========================================
 export function RedNotePreview({ data }: RendererProps) {
   const currentDate = new Date();
+  const hasImages = data.images.length > 0;
 
   // Helper for truncating title
   const truncatedTitle = data.prompt
     ? data.prompt.slice(0, 24) + (data.prompt.length > 24 ? '...' : '')
     : "✨ 必入好物 | 绝绝子的氛围感神器";
 
-  const displayImage = data.image || "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800&q=80";
+  const displayImage = hasImages
+    ? data.images[0]
+    : "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800&q=80";
 
   return (
     <div className="bg-white h-full w-full flex flex-col font-sans text-gray-900 relative">
@@ -229,11 +247,22 @@ export function RedNotePreview({ data }: RendererProps) {
         {/* Main Image */}
         <div className="w-full aspect-[3/4] bg-gray-100 relative">
           <img src={displayImage} alt="Main" className="w-full h-full object-cover" />
-          {/* Pagination */}
+          {/* Pagination Dots */}
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5">
-            <div className="w-1.5 h-1.5 rounded-full bg-white" />
-            <div className="w-1.5 h-1.5 rounded-full bg-white/50" />
-            <div className="w-1.5 h-1.5 rounded-full bg-white/50" />
+            {hasImages ? (
+              data.images.slice(0, 9).map((_, idx) => (
+                <div
+                  key={idx}
+                  className={`w-1.5 h-1.5 rounded-full ${idx === 0 ? 'bg-white' : 'bg-white/50'}`}
+                />
+              ))
+            ) : (
+              <>
+                <div className="w-1.5 h-1.5 rounded-full bg-white" />
+                <div className="w-1.5 h-1.5 rounded-full bg-white/50" />
+                <div className="w-1.5 h-1.5 rounded-full bg-white/50" />
+              </>
+            )}
           </div>
         </div>
 

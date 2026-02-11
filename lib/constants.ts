@@ -1,6 +1,7 @@
 import { Platform } from '@/types';
 
 export const STYLES = [
+  { value: '', label: '请下拉选择' },
   { value: 'minimalist', label: '极简风' },
   { value: 'vintage', label: '复古风' },
   { value: 'cinematic', label: '电影感' },
@@ -9,6 +10,7 @@ export const STYLES = [
 ] as const;
 
 export const PRODUCTS = [
+  { value: '', label: '请下拉选择' },
   { value: 'skincare', label: '护肤品' },
   { value: 'clothing', label: '服饰' },
   { value: 'digital', label: '数码产品' },

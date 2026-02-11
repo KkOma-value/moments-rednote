@@ -13,7 +13,7 @@ export const DeviceMode = {
 export type DeviceMode = (typeof DeviceMode)[keyof typeof DeviceMode];
 
 export interface PreviewData {
-  image: string | null;
+  images: string[];
   style: string;
   product: string;
   prompt: string;
