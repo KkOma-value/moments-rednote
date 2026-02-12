@@ -23,7 +23,7 @@ function getOpenAIClient() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { platform, style, product, prompt, images, conversationId } = body;
+    const { platform, style, purpose, prompt, images, conversationId } = body;
 
     // 参数校验
     if (!platform || !['wechat', 'rednote'].includes(platform)) {
@@ -34,29 +34,41 @@ export async function POST(request: Request) {
     }
 
     // 1. 构建 system prompt
-    const systemPrompt = getSystemPrompt(platform as Platform, style || '', product || '');
+    const systemPrompt = getSystemPrompt(platform as Platform, style || '', purpose || '');
 
     // 2. 构建用户消息
     let userMessage = prompt.trim();
-    if (images && Array.isArray(images) && images.length > 0) {
-      userMessage += `\n\n[用户上传了 ${images.length} 张图片]`;
-    }
     if (style) {
       userMessage += `\n风格偏好：${style}`;
     }
-    if (product) {
-      userMessage += `\n产品类型：${product}`;
+    if (purpose) {
+      userMessage += `\n创作目的：${purpose}`;
     }
 
-    // 3. 调用豆包 API（OpenAI-compatible Chat Completions）
+    // 3. 构建消息内容（支持多模态图片）
     const client = getOpenAIClient();
     const model = process.env.ARK_MODEL || 'doubao-1-5-pro-32k-250115';
 
+    // 构建 user message content：如果有图片，使用多模态格式
+    let userContent: string | Array<{ type: string; text?: string; image_url?: { url: string } }>;
+    if (images && Array.isArray(images) && images.length > 0) {
+      userContent = [
+        { type: 'text', text: userMessage },
+        ...images.map((url: string) => ({
+          type: 'image_url' as const,
+          image_url: { url },
+        })),
+      ];
+    } else {
+      userContent = userMessage;
+    }
+
+    // 调用豆包 API（OpenAI-compatible Chat Completions）
     const completion = await client.chat.completions.create({
       model,
       messages: [
         { role: 'system', content: systemPrompt },
-        { role: 'user', content: userMessage },
+        { role: 'user', content: userContent as string },
       ],
       temperature: 0.8,
       response_format: { type: 'json_object' },
@@ -98,7 +110,7 @@ export async function POST(request: Request) {
           title,
           platform,
           style: style || null,
-          product: product || null,
+          purpose: purpose || null,
         },
       });
       actualConversationId = conversation.id;

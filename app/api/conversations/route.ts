@@ -40,7 +40,7 @@ export async function POST(request: Request) {
     try {
         const prisma = await getPrisma();
         const body = await request.json();
-        const { title, platform, style, product } = body;
+        const { title, platform, style, purpose } = body;
 
         if (typeof title !== 'string' || title.trim().length === 0) {
             return NextResponse.json({ error: 'Title is required' }, { status: 400 });
@@ -55,7 +55,7 @@ export async function POST(request: Request) {
                 title: title.trim(),
                 platform: platform.trim(),
                 style: typeof style === 'string' && style.trim().length > 0 ? style.trim() : null,
-                product: typeof product === 'string' && product.trim().length > 0 ? product.trim() : null,
+                purpose: typeof purpose === 'string' && purpose.trim().length > 0 ? purpose.trim() : null,
             },
         });
 

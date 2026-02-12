@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Upload, Smartphone, Monitor, Wand2, MessageCircle, Heart, History, ChevronDown, Sparkles, Zap, X, Loader2 } from 'lucide-react';
 import { Platform, DeviceMode, PreviewData, HistoryItem, GeneratedContent } from '@/types';
-import { STYLES, PRODUCTS } from '@/lib/constants';
+import { STYLES, PURPOSES } from '@/lib/constants';
 import { WeChatPreview, RedNotePreview } from '@/components/PreviewRenderers';
 
 // Platform-specific styling configuration
@@ -175,7 +175,7 @@ export default function Home() {
   const [previewData, setPreviewData] = useState<PreviewData>({
     images: [],
     style: '',
-    product: '',
+    purpose: '',
     prompt: '',
   });
   const [isGenerating, setIsGenerating] = useState(false);
@@ -256,7 +256,7 @@ export default function Home() {
       setPreviewData({
         images: userMsg?.images || [],
         style: '',
-        product: '',
+        purpose: '',
         prompt: userMsg?.content || '',
         generatedContent,
       });
@@ -350,7 +350,7 @@ export default function Home() {
         body: JSON.stringify({
           platform,
           style: previewData.style,
-          product: previewData.product,
+          purpose: previewData.purpose,
           prompt: previewData.prompt,
           images: previewData.images,
           conversationId: currentConversationId,
@@ -521,7 +521,7 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Style & Product Selects */}
+            {/* Style & Purpose Selects */}
             <div className="grid grid-cols-2 gap-3 animate-in delay-150">
               <div className="space-y-2">
                 <label className="block text-[10px] uppercase tracking-widest font-semibold text-white/40">Style</label>
@@ -537,7 +537,6 @@ export default function Home() {
                         key={s.value}
                         value={s.value}
                         className="bg-[#0a0a0f] text-white"
-                        disabled={s.value === ''}
                       >
                         {s.label}
                       </option>
@@ -548,20 +547,19 @@ export default function Home() {
               </div>
 
               <div className="space-y-2">
-                <label className="block text-[10px] uppercase tracking-widest font-semibold text-white/40">Product</label>
+                <label className="block text-[10px] uppercase tracking-widest font-semibold text-white/40">Purpose</label>
                 <div className="relative group">
                   <select
-                    value={previewData.product}
-                    onChange={(e) => setPreviewData(prev => ({ ...prev, product: e.target.value }))}
-                    className={`input-glass w-full appearance-none pl-4 pr-10 py-3 text-sm font-medium cursor-pointer ${previewData.product === '' ? 'text-white/40 italic' : 'text-white'
+                    value={previewData.purpose}
+                    onChange={(e) => setPreviewData(prev => ({ ...prev, purpose: e.target.value }))}
+                    className={`input-glass w-full appearance-none pl-4 pr-10 py-3 text-sm font-medium cursor-pointer ${previewData.purpose === '' ? 'text-white/40 italic' : 'text-white'
                       }`}
                   >
-                    {PRODUCTS.map(p => (
+                    {PURPOSES.map(p => (
                       <option
                         key={p.value}
                         value={p.value}
                         className="bg-[#0a0a0f] text-white"
-                        disabled={p.value === ''}
                       >
                         {p.label}
                       </option>

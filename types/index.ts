@@ -30,7 +30,7 @@ export interface GeneratedContent {
 export interface PreviewData {
   images: string[];
   style: string;
-  product: string;
+  purpose: string;
   prompt: string;
   generatedContent?: GeneratedContent;
 }

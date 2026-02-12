@@ -8,14 +8,20 @@ export const STYLES = [
   { value: 'refined', label: '精致' },
 ] as const;
 
-export const PRODUCTS = [
+export const PURPOSES = [
   { value: '', label: '请下拉选择' },
-  { value: 'skincare', label: '护肤品' },
-  { value: 'clothing', label: '服饰' },
-  { value: 'digital', label: '数码产品' },
-  { value: 'food', label: '美食' },
-  { value: 'travel', label: '旅游' },
+  { value: 'rolling_ai_promo', label: 'RollingAI产品推广' },
+  { value: 'work_sharing', label: '个人工作分享' },
+  { value: 'market_event', label: '市场活动分享' },
+  { value: 'festival_blessing', label: '节日祝福' },
 ] as const;
+
+export const PURPOSE_LABEL_MAP: Record<string, string> = {
+  rolling_ai_promo: 'RollingAI产品推广',
+  work_sharing: '个人工作分享',
+  market_event: '市场活动分享',
+  festival_blessing: '节日祝福',
+};
 
 // Style value → 中文 label 映射（传递给 AI system prompt）
 export const STYLE_LABEL_MAP: Record<string, string> = {
