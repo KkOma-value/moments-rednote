@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 async function getPrisma() {
     const { prisma } = await import('@/lib/prisma');
@@ -22,8 +23,15 @@ export async function GET() {
         });
         return NextResponse.json(conversations);
     } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unknown error';
         console.error('Failed to fetch conversations:', error);
-        return NextResponse.json({ error: 'Failed to fetch conversations' }, { status: 500 });
+        return NextResponse.json(
+            {
+                error: 'Failed to fetch conversations',
+                ...(process.env.NODE_ENV !== 'production' ? { details: message } : {}),
+            },
+            { status: 500 }
+        );
     }
 }
 
@@ -53,7 +61,14 @@ export async function POST(request: Request) {
 
         return NextResponse.json(conversation, { status: 201 });
     } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unknown error';
         console.error('Failed to create conversation:', error);
-        return NextResponse.json({ error: 'Failed to create conversation' }, { status: 500 });
+        return NextResponse.json(
+            {
+                error: 'Failed to create conversation',
+                ...(process.env.NODE_ENV !== 'production' ? { details: message } : {}),
+            },
+            { status: 500 }
+        );
     }
 }

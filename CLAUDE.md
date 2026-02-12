@@ -44,6 +44,9 @@ Required in `.env`:
 DATABASE_URL="postgresql://..."          # Connection pooler URL
 DIRECT_URL="postgresql://..."            # Direct connection for migrations
 BLOB_READ_WRITE_TOKEN="..."             # Vercel Blob token
+ARK_API_KEY="..."                        # 豆包(Doubao) API Key from 火山方舟
+ARK_BASE_URL="https://ark.cn-beijing.volces.com/api/v3"  # 豆包 API endpoint
+ARK_MODEL="doubao-1-5-pro-32k-250115"   # 豆包模型 ID
 ```
 
 ## Architecture
@@ -67,6 +70,20 @@ async function getPrisma() {
 - `GET/POST /api/conversations` - List/create conversations
 - `GET/POST /api/conversations/[id]/messages` - List/add messages to a conversation
 - `POST /api/upload` - Upload images to Vercel Blob (multi-file support)
+- `POST /api/generate` - AI content generation (calls Doubao API, saves to DB)
+
+### AI Content Generation
+The app uses 豆包 (Doubao) via OpenAI-compatible API (`openai` npm package with custom `baseURL`).
+
+System prompts are stored in `prompt/moments.md` (WeChat) and `prompt/rednote.md` (RedNote).
+The `lib/prompts.ts` module loads these files and injects user-selected style/product context.
+
+The `/api/generate` route:
+1. Loads platform-specific system prompt
+2. Calls Doubao Chat Completions API with `response_format: { type: 'json_object' }`
+3. AI returns structured JSON: `{ title, body, tags, interaction? }`
+4. Saves user message + AI response to database
+5. Returns `GeneratedContent` to frontend for preview rendering
 
 All API routes use `export const dynamic = 'force-dynamic'`.
 
@@ -77,6 +94,7 @@ app/
 │   ├── conversations/
 │   │   ├── route.ts              # List/create conversations
 │   │   └── [id]/messages/route.ts  # Messages for a conversation
+│   ├── generate/route.ts         # AI content generation endpoint
 │   └── upload/route.ts           # Image upload to Vercel Blob
 ├── layout.tsx                    # Root layout with Outfit font
 ├── page.tsx                      # Main content editor interface

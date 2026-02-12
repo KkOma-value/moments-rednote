@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Upload, Smartphone, Monitor, Wand2, MessageCircle, Heart, History, ChevronDown, Sparkles, Zap, X, Loader2 } from 'lucide-react';
-import { Platform, DeviceMode, PreviewData, HistoryItem } from '@/types';
-import { STYLES, PRODUCTS, MOCK_HISTORY } from '@/lib/constants';
+import { Platform, DeviceMode, PreviewData, HistoryItem, GeneratedContent } from '@/types';
+import { STYLES, PRODUCTS } from '@/lib/constants';
 import { WeChatPreview, RedNotePreview } from '@/components/PreviewRenderers';
 
 // Platform-specific styling configuration
@@ -133,15 +133,18 @@ function DeviceToggle({ currentDevice, onDeviceChange }: DeviceToggleProps) {
 interface HistoryItemCardProps {
   item: HistoryItem;
   index: number;
+  isActive?: boolean;
+  onClick?: () => void;
 }
 
-function HistoryItemCard({ item, index }: HistoryItemCardProps) {
+function HistoryItemCard({ item, index, isActive, onClick }: HistoryItemCardProps) {
   const isWeChat = item.platform === Platform.WeChat;
 
   return (
     <div
       key={item.id}
-      className="group flex items-center p-3 rounded-xl glass hover:bg-white/10 transition-all cursor-pointer gap-3"
+      onClick={onClick}
+      className={`group flex items-center p-3 rounded-xl glass hover:bg-white/10 transition-all cursor-pointer gap-3 ${isActive ? 'ring-1 ring-white/20 bg-white/10' : ''}`}
       style={{ animationDelay: `${375 + index * 50}ms` }}
     >
       <div
@@ -177,9 +180,90 @@ export default function Home() {
   });
   const [isGenerating, setIsGenerating] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
+  const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [generateError, setGenerateError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const colors = getPlatformColors(platform);
+
+  // 加载历史记录
+  const loadHistory = useCallback(async () => {
+    try {
+      const res = await fetch('/api/conversations');
+      if (res.ok) {
+        const conversations = await res.json();
+        const items: HistoryItem[] = conversations.map((conv: { id: string; title: string; platform: string; updatedAt: string }) => {
+          const date = new Date(conv.updatedAt);
+          const now = new Date();
+          const diffMs = now.getTime() - date.getTime();
+          const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+          let timestamp: string;
+          if (diffDays === 0) {
+            timestamp = date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+          } else if (diffDays === 1) {
+            timestamp = '昨天';
+          } else {
+            timestamp = `${diffDays} 天前`;
+          }
+          return {
+            id: conv.id,
+            title: conv.title,
+            timestamp,
+            platform: conv.platform as Platform,
+          };
+        });
+        setHistory(items);
+      }
+    } catch (err) {
+      console.error('Failed to load history:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadHistory();
+  }, [loadHistory]);
+
+  // 点击历史记录加载对话
+  async function handleLoadConversation(conversationId: string, itemPlatform: Platform) {
+    try {
+      const res = await fetch(`/api/conversations/${conversationId}/messages`);
+      if (!res.ok) return;
+      const messages = await res.json();
+
+      // 找到最新的 assistant 消息
+      const assistantMsg = [...messages].reverse().find((m: { role: string }) => m.role === 'assistant');
+      // 找到最新的 user 消息
+      const userMsg = [...messages].reverse().find((m: { role: string }) => m.role === 'user');
+
+      let generatedContent: GeneratedContent | undefined;
+      if (assistantMsg) {
+        try {
+          generatedContent = JSON.parse(assistantMsg.content);
+        } catch {
+          generatedContent = {
+            title: '',
+            body: assistantMsg.content,
+            tags: [],
+            rawText: assistantMsg.content,
+          };
+        }
+      }
+
+      setPlatform(itemPlatform);
+      setCurrentConversationId(conversationId);
+      setPreviewData({
+        images: userMsg?.images || [],
+        style: '',
+        product: '',
+        prompt: userMsg?.content || '',
+        generatedContent,
+      });
+    } catch (err) {
+      console.error('Failed to load conversation:', err);
+    }
+  }
 
   async function handleImageUpload(event: React.ChangeEvent<HTMLInputElement>) {
     const files = event.target.files;
@@ -199,7 +283,20 @@ export default function Home() {
       });
 
       if (!response.ok) {
-        throw new Error('Upload failed');
+        const raw = await response.text();
+        let message = '图片上传失败，请重试';
+        try {
+          const parsed = JSON.parse(raw);
+          if (typeof parsed?.error === 'string' && parsed.error.length > 0) {
+            message = parsed.error;
+          }
+          if (typeof parsed?.details === 'string' && parsed.details.length > 0) {
+            message = `${message} (${parsed.details})`;
+          }
+        } catch {
+          if (raw) message = `${message} (${raw})`;
+        }
+        throw new Error(message);
       }
 
       const data = await response.json();
@@ -211,7 +308,8 @@ export default function Home() {
       }));
     } catch (error) {
       console.error('Upload error:', error);
-      alert('图片上传失败，请重试');
+      const message = error instanceof Error ? error.message : '图片上传失败，请重试';
+      alert(message);
     } finally {
       setIsUploading(false);
       // Reset file input
@@ -232,9 +330,68 @@ export default function Home() {
     setPreviewData(prev => ({ ...prev, images: [] }));
   }
 
-  function handleGenerate() {
+  async function handleGenerate() {
+    if (!previewData.prompt.trim()) {
+      setGenerateError('请输入创作提示词');
+      return;
+    }
+
     setIsGenerating(true);
-    setTimeout(() => setIsGenerating(false), 2500);
+    setGenerateError(null);
+
+    // 创建 AbortController 用于取消
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
+    try {
+      const res = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          platform,
+          style: previewData.style,
+          product: previewData.product,
+          prompt: previewData.prompt,
+          images: previewData.images,
+          conversationId: currentConversationId,
+        }),
+        signal: controller.signal,
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || 'Generation failed');
+      }
+
+      const data = await res.json();
+
+      // 更新预览数据
+      setPreviewData(prev => ({
+        ...prev,
+        generatedContent: data.content as GeneratedContent,
+      }));
+      setCurrentConversationId(data.conversationId);
+
+      // 刷新历史记录
+      await loadHistory();
+    } catch (error: unknown) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        // 用户取消，不做处理
+        return;
+      }
+      console.error('Generate error:', error);
+      setGenerateError(error instanceof Error ? error.message : '生成失败，请重试');
+    } finally {
+      setIsGenerating(false);
+      abortControllerRef.current = null;
+    }
+  }
+
+  function handleCancelGenerate() {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    setIsGenerating(false);
   }
 
   return (
@@ -438,15 +595,28 @@ export default function Home() {
               <span className="text-[10px] uppercase tracking-widest font-semibold">Recent Projects</span>
             </div>
             <div className="space-y-2">
-              {MOCK_HISTORY.map((item, idx) => (
-                <HistoryItemCard key={item.id} item={item} index={idx} />
-              ))}
+              {history.length > 0 ? (
+                history.slice(0, 10).map((item, idx) => (
+                  <HistoryItemCard
+                    key={item.id}
+                    item={item}
+                    index={idx}
+                    isActive={currentConversationId === item.id}
+                    onClick={() => handleLoadConversation(item.id, item.platform)}
+                  />
+                ))
+              ) : (
+                <p className="text-xs text-white/30 text-center py-4">暂无历史记录</p>
+              )}
             </div>
           </div>
         </div>
 
         {/* Generate Button */}
         <div className="p-6 border-t border-white/5">
+          {generateError && (
+            <p className="text-xs text-rose-400 mb-2 text-center">{generateError}</p>
+          )}
           <button
             onClick={handleGenerate}
             disabled={isGenerating}
@@ -467,7 +637,7 @@ export default function Home() {
 
           {isGenerating && (
             <button
-              onClick={() => setIsGenerating(false)}
+              onClick={handleCancelGenerate}
               className="w-full mt-2 text-xs font-medium text-white/40 hover:text-rose-400 transition-colors py-2"
             >
               Cancel

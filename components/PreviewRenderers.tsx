@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { PreviewData } from '@/types';
-import { Heart, MessageCircle, Share2, MoreHorizontal, Camera, ArrowLeft, Star } from 'lucide-react';
+import { Heart, MessageCircle, Share2, MoreHorizontal, Camera, ArrowLeft, Star, Wand2 } from 'lucide-react';
 
 interface RendererProps {
   data: PreviewData;
@@ -92,6 +92,16 @@ function getWeChatGridClass(count: number): string {
 export function WeChatPreview({ data }: RendererProps) {
   const timeString = formatCurrentTime();
   const hasImages = data.images.length > 0;
+  const gc = data.generatedContent;
+  const hasGenerated = gc && (gc.body || gc.title);
+
+  // 构建朋友圈显示文案
+  const displayText = hasGenerated
+    ? `${gc.title ? gc.title + '\n' : ''}${gc.body}`
+    : null;
+
+  // 标签
+  const displayTags = gc?.tags && gc.tags.length > 0 ? gc.tags : null;
 
   return (
     <div className="bg-white h-full w-full flex flex-col font-sans text-gray-900">
@@ -130,7 +140,7 @@ export function WeChatPreview({ data }: RendererProps) {
             className="w-full h-full object-cover"
           />
           <div className="absolute bottom-4 right-4 flex items-end gap-3">
-            <span className="text-white font-semibold text-base drop-shadow-lg">Jane Doe</span>
+            <span className="text-white font-semibold text-base drop-shadow-lg">RollingAI</span>
             <div className="ring-2 ring-white shadow-lg">
               <Avatar
                 src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&q=80"
@@ -157,10 +167,20 @@ export function WeChatPreview({ data }: RendererProps) {
 
             {/* Content */}
             <div className="flex-1 min-w-0">
-              <h3 className="text-[#576B95] font-semibold text-[15px] mb-1.5">Jane Doe</h3>
-              <p className="text-[15px] text-gray-900 mb-3 leading-relaxed whitespace-pre-wrap">
-                {data.prompt || "发现了一个超棒的宝藏产品！✨\n\n用了一段时间，真的太惊艳了！无论是颜值还是实用性都满分，强烈推荐给大家～"}
-              </p>
+              <h3 className="text-[#576B95] font-semibold text-[15px] mb-1.5">RollingAI</h3>
+
+              {displayText && (
+                <>
+                  <p className="text-[15px] text-gray-900 mb-2 leading-relaxed whitespace-pre-wrap">
+                    {displayText}
+                  </p>
+                  {displayTags && (
+                    <p className="text-[14px] text-[#576B95] mb-3 leading-relaxed">
+                      {displayTags.map(t => `#${t}`).join(' ')}
+                    </p>
+                  )}
+                </>
+              )}
 
               {/* Image Grid */}
               <div className="mb-3">
@@ -221,11 +241,12 @@ export function WeChatPreview({ data }: RendererProps) {
 export function RedNotePreview({ data }: RendererProps) {
   const currentDate = new Date();
   const hasImages = data.images.length > 0;
+  const gc = data.generatedContent;
+  const hasGenerated = gc && (gc.body || gc.title);
 
-  // Helper for truncating title
-  const truncatedTitle = data.prompt
-    ? data.prompt.slice(0, 24) + (data.prompt.length > 24 ? '...' : '')
-    : "✨ 必入好物 | 绝绝子的氛围感神器";
+  const displayTitle = hasGenerated && gc.title
+    ? gc.title
+    : (!hasGenerated ? null : "✨ RollingAI 内容笔记");
 
   const displayImage = hasImages
     ? data.images[0]
@@ -274,7 +295,7 @@ export function RedNotePreview({ data }: RendererProps) {
               alt="Author"
             />
             <div className="flex-1">
-              <div className="font-semibold text-sm text-gray-900">时尚达人小红</div>
+              <div className="font-semibold text-sm text-gray-900">RollingAI 内容创作</div>
               <div className="text-xs text-gray-400">2小时前</div>
             </div>
             <button className="px-4 py-1.5 bg-[#FF2442] text-white text-xs font-semibold rounded-full">
@@ -282,28 +303,39 @@ export function RedNotePreview({ data }: RendererProps) {
             </button>
           </div>
 
-          {/* Title */}
-          <h1 className="text-lg font-bold text-gray-900 mb-3 leading-snug">
-            {truncatedTitle}
-          </h1>
+          {hasGenerated && (
+            <>
+              {/* Title */}
+              {displayTitle && (
+                <h1 className="text-lg font-bold text-gray-900 mb-3 leading-snug">
+                  {displayTitle}
+                </h1>
+              )}
 
-          {/* Description */}
-          <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line mb-4">
-            {data.prompt || `姐妹们！这款真的绝了！🔥
+              {/* Body - 分段显示 */}
+              <div className="text-sm text-gray-700 leading-relaxed mb-4 whitespace-pre-line">
+                {gc.body}
+              </div>
 
-从质感到设计都太对味了，拍照超出片，而且性价比也很高～
+              {/* Tags */}
+              {gc.tags && gc.tags.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {gc.tags.map((tag, idx) => (
+                    <span key={idx} className="px-3 py-1 bg-gray-100 text-xs text-[#FF2442] rounded-full font-medium">
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
+              )}
 
-不吹不黑，用过的都说好！强烈安利给你们！
-
-#${data.style || '日常分享'} #${data.product || '好物推荐'} #必买清单`}
-          </p>
-
-          {/* Tags */}
-          <div className="flex flex-wrap gap-2 mb-4">
-            <span className="px-3 py-1 bg-gray-100 text-xs text-gray-600 rounded-full">#{data.product || '好物'}</span>
-            <span className="px-3 py-1 bg-gray-100 text-xs text-gray-600 rounded-full">#{data.style || '风格'}</span>
-            <span className="px-3 py-1 bg-gray-100 text-xs text-gray-600 rounded-full">#每日穿搭</span>
-          </div>
+              {/* Interaction Question */}
+              {gc.interaction && (
+                <p className="text-sm text-gray-500 italic mb-4">
+                  {gc.interaction}
+                </p>
+              )}
+            </>
+          )}
 
           <div className="text-xs text-gray-400 mb-6">编辑于 {currentDate.toLocaleDateString('zh-CN')}</div>
 
