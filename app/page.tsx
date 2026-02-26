@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Upload, Smartphone, Monitor, Wand2, MessageCircle, Heart, History, ChevronDown, Sparkles, Zap, X, Loader2 } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Upload, Smartphone, Monitor, Wand2, MessageCircle, Heart, History, ChevronDown, Sparkles, Zap, X, Loader2, Copy, Check } from 'lucide-react';
 import { Platform, DeviceMode, PreviewData, HistoryItem, GeneratedContent } from '@/types';
 import { STYLES, PURPOSES } from '@/lib/constants';
 import { WeChatPreview, RedNotePreview } from '@/components/PreviewRenderers';
@@ -180,90 +180,25 @@ export default function Home() {
   });
   const [isGenerating, setIsGenerating] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
-  const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [history] = useState<HistoryItem[]>([]);
   const [generateError, setGenerateError] = useState<string | null>(null);
+  const [isCopied, setIsCopied] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [userId, setUserId] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  const colors = getPlatformColors(platform);
-
-  // 加载历史记录
-  const loadHistory = useCallback(async () => {
-    try {
-      const res = await fetch('/api/conversations');
-      if (res.ok) {
-        const conversations = await res.json();
-        const items: HistoryItem[] = conversations.map((conv: { id: string; title: string; platform: string; updatedAt: string }) => {
-          const date = new Date(conv.updatedAt);
-          const now = new Date();
-          const diffMs = now.getTime() - date.getTime();
-          const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-          let timestamp: string;
-          if (diffDays === 0) {
-            timestamp = date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
-          } else if (diffDays === 1) {
-            timestamp = '昨天';
-          } else {
-            timestamp = `${diffDays} 天前`;
-          }
-          return {
-            id: conv.id,
-            title: conv.title,
-            timestamp,
-            platform: conv.platform as Platform,
-          };
-        });
-        setHistory(items);
-      }
-    } catch (err) {
-      console.error('Failed to load history:', err);
-    }
+  // 从 URL 查询参数读取 userId 和 platform
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const uid = params.get('userId');
+    const plt = params.get('platform');
+    if (uid) setUserId(uid);
+    if (plt === 'rednote') setPlatform(Platform.RedNote);
+    else if (plt === 'wechat') setPlatform(Platform.WeChat);
   }, []);
 
-  useEffect(() => {
-    loadHistory();
-  }, [loadHistory]);
-
-  // 点击历史记录加载对话
-  async function handleLoadConversation(conversationId: string, itemPlatform: Platform) {
-    try {
-      const res = await fetch(`/api/conversations/${conversationId}/messages`);
-      if (!res.ok) return;
-      const messages = await res.json();
-
-      // 找到最新的 assistant 消息
-      const assistantMsg = [...messages].reverse().find((m: { role: string }) => m.role === 'assistant');
-      // 找到最新的 user 消息
-      const userMsg = [...messages].reverse().find((m: { role: string }) => m.role === 'user');
-
-      let generatedContent: GeneratedContent | undefined;
-      if (assistantMsg) {
-        try {
-          generatedContent = JSON.parse(assistantMsg.content);
-        } catch {
-          generatedContent = {
-            title: '',
-            body: assistantMsg.content,
-            tags: [],
-            rawText: assistantMsg.content,
-          };
-        }
-      }
-
-      setPlatform(itemPlatform);
-      setCurrentConversationId(conversationId);
-      setPreviewData({
-        images: userMsg?.images || [],
-        style: '',
-        purpose: '',
-        prompt: userMsg?.content || '',
-        generatedContent,
-      });
-    } catch (err) {
-      console.error('Failed to load conversation:', err);
-    }
-  }
+  const colors = getPlatformColors(platform);
 
   async function handleImageUpload(event: React.ChangeEvent<HTMLInputElement>) {
     const files = event.target.files;
@@ -353,7 +288,6 @@ export default function Home() {
           purpose: previewData.purpose,
           prompt: previewData.prompt,
           images: previewData.images,
-          conversationId: currentConversationId,
         }),
         signal: controller.signal,
       });
@@ -370,10 +304,6 @@ export default function Home() {
         ...prev,
         generatedContent: data.content as GeneratedContent,
       }));
-      setCurrentConversationId(data.conversationId);
-
-      // 刷新历史记录
-      await loadHistory();
     } catch (error: unknown) {
       if (error instanceof Error && error.name === 'AbortError') {
         // 用户取消，不做处理
@@ -392,6 +322,44 @@ export default function Home() {
       abortControllerRef.current.abort();
     }
     setIsGenerating(false);
+  }
+
+  async function handleCopyAndSync() {
+    const gc = previewData.generatedContent;
+    if (!gc) return;
+
+    // 1. 复制正文到剪贴板
+    try {
+      await navigator.clipboard.writeText(gc.body);
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
+    } catch (err) {
+      console.error('Clipboard write failed:', err);
+    }
+
+    // 2. 后台同步到飞书多维表格
+    setIsSyncing(true);
+    try {
+      const res = await fetch('/api/feishu-sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content: gc.body,
+          purpose: previewData.purpose,
+          style: previewData.style,
+          platform,
+          userId,
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        console.error('Feishu sync failed:', err.error || res.statusText);
+      }
+    } catch (err) {
+      console.error('Feishu sync error:', err);
+    } finally {
+      setIsSyncing(false);
+    }
   }
 
   return (
@@ -599,8 +567,8 @@ export default function Home() {
                     key={item.id}
                     item={item}
                     index={idx}
-                    isActive={currentConversationId === item.id}
-                    onClick={() => handleLoadConversation(item.id, item.platform)}
+                    isActive={false}
+                    onClick={() => {}}
                   />
                 ))
               ) : (
@@ -691,6 +659,38 @@ export default function Home() {
               </div>
             )}
           </div>
+
+          {/* Copy Button — 复制文案 + 同步飞书 */}
+          {previewData.generatedContent && (
+            <div className="mt-6 flex justify-center">
+              <button
+                onClick={handleCopyAndSync}
+                disabled={isSyncing}
+                className={`flex items-center gap-2.5 px-6 py-3 rounded-2xl font-semibold text-sm text-white transition-all duration-300 active:scale-[0.97] ${
+                  isCopied
+                    ? 'bg-gradient-to-r from-green-500 to-emerald-500 shadow-lg shadow-green-500/25'
+                    : `${colors.bgGradient} ${colors.bgGradientHover} shadow-lg ${colors.shadow}`
+                } ${isSyncing ? 'opacity-80 cursor-wait' : 'hover:shadow-xl'}`}
+              >
+                {isCopied ? (
+                  <>
+                    <Check size={18} />
+                    <span>已复制</span>
+                  </>
+                ) : isSyncing ? (
+                  <>
+                    <Loader2 size={18} className="animate-spin" />
+                    <span>同步中...</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy size={18} />
+                    <span>复制文案</span>
+                  </>
+                )}
+              </button>
+            </div>
+          )}
         </div>
       </main>
     </div>

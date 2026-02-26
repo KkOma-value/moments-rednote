@@ -6,12 +6,6 @@ import { Platform, GeneratedContent } from '@/types';
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-// 延迟初始化 Prisma
-async function getPrisma() {
-  const { prisma } = await import('@/lib/prisma');
-  return prisma;
-}
-
 // 延迟初始化 OpenAI 客户端（兼容豆包 API）
 function getOpenAIClient() {
   return new OpenAI({
@@ -23,7 +17,7 @@ function getOpenAIClient() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { platform, style, purpose, prompt, images, conversationId } = body;
+    const { platform, style, purpose, prompt, images } = body;
 
     // 参数校验
     if (!platform || !['wechat', 'rednote'].includes(platform)) {
@@ -97,53 +91,7 @@ export async function POST(request: Request) {
       };
     }
 
-    // 5. 保存到数据库
-    const prisma = await getPrisma();
-    let actualConversationId = conversationId;
-
-    // 如果没有 conversationId，创建新对话
-    if (!actualConversationId) {
-      const title = generatedContent.title
-        || prompt.slice(0, 20) + (prompt.length > 20 ? '...' : '');
-      const conversation = await prisma.conversation.create({
-        data: {
-          title,
-          platform,
-          style: style || null,
-          purpose: purpose || null,
-        },
-      });
-      actualConversationId = conversation.id;
-    }
-
-    // 保存用户消息
-    await prisma.message.create({
-      data: {
-        conversationId: actualConversationId,
-        role: 'user',
-        content: prompt.trim(),
-        images: Array.isArray(images) ? images : [],
-      },
-    });
-
-    // 保存 AI 回复
-    await prisma.message.create({
-      data: {
-        conversationId: actualConversationId,
-        role: 'assistant',
-        content: JSON.stringify(generatedContent),
-        images: [],
-      },
-    });
-
-    // 更新对话的 updatedAt
-    await prisma.conversation.update({
-      where: { id: actualConversationId },
-      data: { updatedAt: new Date() },
-    });
-
     return NextResponse.json({
-      conversationId: actualConversationId,
       content: generatedContent,
     });
   } catch (error) {
