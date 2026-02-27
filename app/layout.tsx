@@ -16,12 +16,13 @@ export const metadata: Metadata = {
 interface RootLayoutProps {
   children: React.ReactNode;
 }
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="zh-CN">
       <body className={`${outfit.variable} antialiased`}>
-        {children}
+        <TooltipProvider>{children}</TooltipProvider>
       </body>
     </html>
   );

@@ -1,7 +1,6 @@
 import { Platform } from '@/types';
 
 export const STYLES = [
-  { value: '', label: '请下拉选择' },
   { value: 'business', label: '商务' },
   { value: 'professional', label: '专业' },
   { value: 'friendly', label: '亲和' },
@@ -9,7 +8,6 @@ export const STYLES = [
 ] as const;
 
 export const PURPOSES = [
-  { value: '', label: '请下拉选择' },
   { value: 'rolling_ai_promo', label: 'RollingAI产品推广' },
   { value: 'work_sharing', label: '个人工作分享' },
   { value: 'market_event', label: '市场活动分享' },
