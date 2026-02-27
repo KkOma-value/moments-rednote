@@ -8,8 +8,8 @@ Generate and preview content for WeChat Moments (朋友圈) and RedNote (小红�
 
 [![Tech Stack](https://img.shields.io/badge/Next.js-16.1-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19.2-blue?style=for-the-badge&logo=react)](https://react.dev/)
-[![Prisma](https://img.shields.io/badge/Prisma-7.3-2D3748?style=for-the-badge&logo=prisma)](https://www.prisma.io/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
+[![shadcn/ui](https://img.shields.io/badge/shadcn/ui-latest-000?style=for-the-badge)](https://ui.shadcn.com/)
 
 </div>
 
@@ -17,12 +17,13 @@ Generate and preview content for WeChat Moments (朋友圈) and RedNote (小红�
 
 ## Features
 
-- **Dual Platform Support** - Create content for WeChat and RedNote with platform-specific styling
-- **Real-time Preview** - See how your content looks on mobile and desktop views
-- **Image Upload** - Upload multiple images with Vercel Blob storage
-- **Style & Product Templates** - Pre-configured styles and product categories
-- **Conversation History** - Track all your content generation sessions
-- **Glassmorphism UI** - Beautiful "Liquid Glass" design system
+- **Dual Platform Support** — Create content for WeChat and RedNote with platform-specific styling
+- **AI Content Generation** — Generate social media copy via OpenAI, with configurable style and purpose
+- **Real-time Preview** — See how your content looks on mobile and desktop device frames
+- **Image Upload** — Upload multiple images with Vercel Blob storage
+- **Style & Purpose Templates** — Pre-configured creative styles (商务/专业/亲和/精致) and purpose categories
+- **Feishu Sync** — One-click copy to clipboard and sync generated content to Feishu (Lark) spreadsheet
+- **Editorial Luxury UI** — Refined warm-toned design with Playfair Display serif + DM Sans typography, built on shadcn/ui
 
 ---
 
@@ -30,11 +31,12 @@ Generate and preview content for WeChat Moments (朋友圈) and RedNote (小红�
 
 | Component | Technology |
 |-----------|------------|
-| Framework | [Next.js 16.1.6](https://nextjs.org/) (App Router) |
+| Framework | [Next.js 16.1.6](https://nextjs.org/) (App Router + Turbopack) |
 | UI Library | [React 19.2.3](https://react.dev/) |
-| Database | [PostgreSQL](https://www.postgresql.org/) via [Supabase](https://supabase.com/) |
-| ORM | [Prisma 7.3.0](https://www.prisma.io/) |
+| UI Components | [shadcn/ui](https://ui.shadcn.com/) (Radix UI + Tailwind CSS) |
 | Storage | [Vercel Blob](https://vercel.com/docs/storage/vercel-blob) |
+| AI | [OpenAI SDK](https://github.com/openai/openai-node) |
+| Feishu Integration | [@larksuiteoapi/node-sdk](https://github.com/larksuite/node-sdk) |
 | Styling | [Tailwind CSS v4](https://tailwindcss.com/) |
 | Language | [TypeScript](https://www.typescriptlang.org/) |
 
@@ -45,8 +47,9 @@ Generate and preview content for WeChat Moments (朋友圈) and RedNote (小红�
 ### Prerequisites
 
 - Node.js 18+
-- A Supabase project
 - Vercel Blob storage account
+- OpenAI API key
+- (Optional) Feishu/Lark App credentials for spreadsheet sync
 
 ### Installation
 
@@ -70,26 +73,14 @@ Edit `.env` with your credentials:
 # Vercel Blob token for image uploads
 BLOB_READ_WRITE_TOKEN="vercel_blob_xxx"
 
-# Supabase Transaction Pooler (for Prisma Client runtime)
-DATABASE_URL="postgresql://postgres:[PASSWORD]@[PROJECT-POOLER]:6543/postgres?pgbouncer=true"
+# OpenAI API key for content generation
+OPENAI_API_KEY="sk-xxx"
 
-# Supabase Direct Connection (for migrations)
-DIRECT_URL="postgresql://postgres:[PASSWORD]@db.[PROJECT].supabase.co:5432/postgres"
-```
-
-> **Note:** Use Session Pooler for `DIRECT_URL` if direct connection fails (see [Troubleshooting](#troubleshooting))
-
-### Database Setup
-
-```bash
-# Generate Prisma Client
-npm run prisma:generate
-
-# Push schema to database
-npm run prisma:push
-
-# (Optional) Open Prisma Studio to manage data
-npm run prisma:studio
+# (Optional) Feishu / Lark sync
+FEISHU_APP_ID="cli_xxx"
+FEISHU_APP_SECRET="xxx"
+FEISHU_BITABLE_APP_TOKEN="xxx"
+FEISHU_BITABLE_TABLE_ID="xxx"
 ```
 
 ### Run Development Server
@@ -108,23 +99,38 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 moments-rednote/
 ├── app/
 │   ├── api/
-│   │   ├── conversations/
-│   │   │   ├── route.ts              # List/create conversations
-│   │   │   └── [id]/messages/route.ts # Message API
-│   │   └── upload/route.ts            # Image upload
-│   ├── layout.tsx                     # Root layout
-│   ├── page.tsx                       # Main editor
-│   └── globals.css                    # Design system
+│   │   ├── generate/route.ts          # AI content generation
+│   │   ├── upload/route.ts            # Image upload to Vercel Blob
+│   │   └── feishu-sync/route.ts       # Feishu spreadsheet sync
+│   ├── playground-modern/page.tsx     # Playground: Editorial Luxury
+│   ├── playground-glass/page.tsx      # Playground: Neon Cyber
+│   ├── playground-minimal/page.tsx    # Playground: Aurora Dreamscape
+│   ├── layout.tsx                     # Root layout (Outfit font, TooltipProvider)
+│   ├── page.tsx                       # Main editor (Editorial Luxury design)
+│   └── globals.css                    # Global styles + shadcn/ui CSS variables
 ├── components/
-│   └── PreviewRenderers.tsx           # Platform previews
+│   ├── ui/                            # shadcn/ui components
+│   │   ├── button.tsx
+│   │   ├── card.tsx
+│   │   ├── input.tsx
+│   │   ├── label.tsx
+│   │   ├── resizable.tsx
+│   │   ├── scroll-area.tsx
+│   │   ├── select.tsx
+│   │   ├── separator.tsx
+│   │   ├── tabs.tsx
+│   │   ├── textarea.tsx
+│   │   └── tooltip.tsx
+│   └── PreviewRenderers.tsx           # WeChat & RedNote preview components
 ├── lib/
-│   ├── prisma.ts                      # Prisma client
-│   └── constants.ts                   # Styles, products
-├── prisma/
-│   ├── schema.prisma                  # Database schema
-│   └── prisma.config.ts               # Prisma v7 config
+│   ├── constants.ts                   # Styles, purposes, label maps
+│   ├── prompts.ts                     # AI system prompts
+│   └── utils.ts                       # Utility functions (cn helper)
 ├── types/
 │   └── index.ts                       # TypeScript types
+├── prompt/                            # Prompt templates
+├── public/                            # Static assets
+├── components.json                    # shadcn/ui configuration
 └── CLAUDE.md                          # Developer guide
 ```
 
@@ -134,51 +140,25 @@ moments-rednote/
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `GET` | `/api/conversations` | List all conversations |
-| `POST` | `/api/conversations` | Create new conversation |
-| `GET` | `/api/conversations/[id]/messages` | Get conversation messages |
-| `POST` | `/api/conversations/[id]/messages` | Add message to conversation |
+| `POST` | `/api/generate` | Generate AI content for WeChat/RedNote |
 | `POST` | `/api/upload` | Upload images to Vercel Blob |
-
----
-
-## Database Schema
-
-```prisma
-model Conversation {
-  id        String   @id @default(cuid())
-  platform  String
-  style     String?
-  product   String?
-  messages  Message[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Message {
-  id             String       @id @default(cuid())
-  role           String        // 'user' | 'assistant'
-  content        String?       @db.Text
-  images         String[]
-  conversationId String
-  conversation   Conversation @relation(fields: [conversationId])
-  createdAt      DateTime     @default(now())
-}
-```
+| `POST` | `/api/feishu-sync` | Sync generated content to Feishu spreadsheet |
 
 ---
 
 ## Design System
 
-The app uses a custom "Liquid Glass" glassmorphism design:
+The app uses an **Editorial Luxury** design with shadcn/ui components:
 
-| Class | Description |
-|-------|-------------|
-| `.glass` | Standard glassmorphism effect |
-| `.glass-dark` | Dark variant for sidebar |
-| `.input-glass` | Glass-styled form inputs |
-| `.bg-mesh-gradient-wechat` | WeChat platform gradient |
-| `.bg-mesh-gradient-rednote` | RedNote platform gradient |
+| Element | Details |
+|---------|---------|
+| Background | Warm cream/ivory `#FAF8F5` |
+| Accent | Burnt sienna gold `#C4956A` — `#A67C52` |
+| WeChat Theme | Forest green `#4A7C59` — `#5B9A6E` |
+| RedNote Theme | Warm rose `#C25B5B` — `#D4696E` |
+| Display Font | [Playfair Display](https://fonts.google.com/specimen/Playfair+Display) (serif) |
+| Body Font | [DM Sans](https://fonts.google.com/specimen/DM+Sans) (sans-serif) |
+| UI Components | shadcn/ui (Button, Select, Textarea, ScrollArea, etc.) |
 
 ---
 
@@ -186,44 +166,10 @@ The app uses a custom "Liquid Glass" glassmorphism design:
 
 | Command | Description |
 |---------|-------------|
-| `npm run dev` | Start development server |
+| `npm run dev` | Start development server (Turbopack) |
 | `npm run build` | Build for production |
 | `npm run start` | Start production server |
 | `npm run lint` | Run ESLint |
-| `npm run prisma:generate` | Generate Prisma Client |
-| `npm run prisma:push` | Push schema to database |
-| `npm run prisma:migrate` | Create and apply migrations |
-| `npm run prisma:studio` | Open Prisma Studio |
-
----
-
-## Troubleshooting
-
-### Prisma v7 Connection Issues
-
-**Error:** `P1017: Server has closed the connection`
-
-**Solution:** Ensure `prisma.config.ts` uses `DIRECT_URL` (non-pooled connection) for CLI operations.
-
-### Supabase Direct Connection Fails
-
-**Error:** `P1001: Can't reach database server`
-
-**Solution:** Use Supabase **Session Pooler** instead of direct connection:
-
-```bash
-# Replace direct connection
-DIRECT_URL="postgresql://postgres:[PWD]@db.xxx.supabase.co:5432/postgres"
-
-# With Session Pooler
-DIRECT_URL="postgresql://postgres.xxx:[PWD]@aws-1-ap-southeast-2.pooler.supabase.com:5432/postgres"
-```
-
-### Build Errors
-
-**Error:** `Module '"@prisma/client"' has no exported member 'PrismaClient'`
-
-**Solution:** Run `npm run prisma:generate` before building.
 
 ---
 
@@ -251,6 +197,6 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 <div align="center">
 
-Made with [Next.js](https://nextjs.org/) + [Prisma](https://www.prisma.io/) + [Supabase](https://supabase.com/)
+Made with [Next.js](https://nextjs.org/) + [shadcn/ui](https://ui.shadcn.com/) + [OpenAI](https://openai.com/)
 
 </div>
