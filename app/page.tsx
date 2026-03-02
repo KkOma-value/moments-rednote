@@ -120,7 +120,7 @@ export default function PlaygroundEditorial() {
             });
             if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || 'Generation failed'); }
             const data = await res.json();
-            setPreviewData(prev => ({ ...prev, generatedContent: data.content as GeneratedContent }));
+            setPreviewData(prev => ({ ...prev, generatedContent: data.content as GeneratedContent, prompt: '' }));
         } catch (error: unknown) {
             if (error instanceof Error && error.name === 'AbortError') return;
             console.error('Generate error:', error);
