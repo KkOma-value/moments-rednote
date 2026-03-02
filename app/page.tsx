@@ -42,6 +42,7 @@ export default function PlaygroundEditorial() {
     const [userId, setUserId] = useState<string>('');
     const fileInputRef = useRef<HTMLInputElement>(null);
     const abortControllerRef = useRef<AbortController | null>(null);
+    const autoGenerateRef = useRef(false);
 
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
@@ -51,6 +52,30 @@ export default function PlaygroundEditorial() {
         if (plt === 'rednote') setPlatform(Platform.RedNote);
         else if (plt === 'wechat') setPlatform(Platform.WeChat);
     }, []);
+
+    // Brief auto-fill: fetch brief by id from URL and populate prompt
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const briefId = params.get('id');
+        if (!briefId) return;
+        fetch(`/api/brief?id=${briefId}`)
+            .then(res => res.ok ? res.json() : null)
+            .then(data => {
+                if (!data?.brief) return;
+                setPreviewData(prev => ({ ...prev, prompt: data.brief }));
+                autoGenerateRef.current = true;
+            })
+            .catch(() => {});
+    }, []);
+
+    // Auto-generate after brief is filled
+    useEffect(() => {
+        if (autoGenerateRef.current && previewData.prompt) {
+            autoGenerateRef.current = false;
+            handleGenerate();
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [previewData.prompt]);
 
     // ── Handlers (same logic as original) ──
     async function handleImageUpload(event: React.ChangeEvent<HTMLInputElement>) {
