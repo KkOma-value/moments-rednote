@@ -51,21 +51,14 @@ export default function PlaygroundEditorial() {
         if (uid) setUserId(uid);
         if (plt === 'rednote') setPlatform(Platform.RedNote);
         else if (plt === 'wechat') setPlatform(Platform.WeChat);
-    }, []);
 
-    // Brief auto-fill: fetch brief by id from URL and populate prompt
-    useEffect(() => {
-        const params = new URLSearchParams(window.location.search);
-        const briefId = params.get('id');
-        if (!briefId) return;
-        fetch(`/api/brief?id=${briefId}`)
-            .then(res => res.ok ? res.json() : null)
-            .then(data => {
-                if (!data?.brief) return;
-                setPreviewData(prev => ({ ...prev, prompt: data.brief }));
-                autoGenerateRef.current = true;
-            })
-            .catch(() => {});
+        // Auto-fill from `b` URL param and trigger generation
+        const b = params.get('b');
+        if (b) {
+            const decoded = decodeURIComponent(b);
+            setPreviewData(prev => ({ ...prev, prompt: decoded }));
+            autoGenerateRef.current = true;
+        }
     }, []);
 
     // Auto-generate after brief is filled
