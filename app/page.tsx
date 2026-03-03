@@ -39,6 +39,7 @@ export default function PlaygroundEditorial() {
     const [generateError, setGenerateError] = useState<string | null>(null);
     const [isCopied, setIsCopied] = useState(false);
     const [isSyncing, setIsSyncing] = useState(false);
+    const [syncToast, setSyncToast] = useState<null | 'success' | 'error'>(null);
     const [userId, setUserId] = useState<string>('');
     const fileInputRef = useRef<HTMLInputElement>(null);
     const abortControllerRef = useRef<AbortController | null>(null);
@@ -105,6 +106,15 @@ export default function PlaygroundEditorial() {
         setPreviewData(prev => ({ ...prev, images: [] }));
     }
 
+    function buildTextFromContent(gc: GeneratedContent): string {
+        if (gc.rawText && gc.rawText.trim()) return gc.rawText;
+        const parts: string[] = [];
+        if (gc.title) parts.push(gc.title);
+        if (gc.body) parts.push(gc.body);
+        if (gc.tags && gc.tags.length > 0) { parts.push(''); parts.push(gc.tags.map(t => `#${t}`).join(' ')); }
+        return parts.join('\n');
+    }
+
     async function handleGenerate() {
         if (!previewData.prompt.trim()) { setGenerateError('请输入创作提示词'); return; }
         setIsGenerating(true);
@@ -120,7 +130,19 @@ export default function PlaygroundEditorial() {
             });
             if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || 'Generation failed'); }
             const data = await res.json();
-            setPreviewData(prev => ({ ...prev, generatedContent: data.content as GeneratedContent, prompt: '' }));
+            const generatedContent = data.content as GeneratedContent;
+            setPreviewData(prev => ({ ...prev, generatedContent, prompt: '' }));
+
+            // Auto-save to Feishu (fire-and-forget)
+            const fullText = buildTextFromContent(generatedContent);
+            fetch('/api/feishu-sync', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content: fullText, purpose: previewData.purpose, style: previewData.style, platform, userId }),
+            })
+                .then(r => { if (r.ok) { setSyncToast('success'); } else { setSyncToast('error'); } })
+                .catch(() => setSyncToast('error'))
+                .finally(() => setTimeout(() => setSyncToast(null), 2500));
         } catch (error: unknown) {
             if (error instanceof Error && error.name === 'AbortError') return;
             console.error('Generate error:', error);
@@ -496,6 +518,21 @@ export default function PlaygroundEditorial() {
 
 
                     </div>
+
+                    {/* Feishu sync toast */}
+                    {syncToast && (
+                        <div
+                            className="absolute top-20 right-10 z-50 flex items-center gap-2 px-4 py-2.5 rounded-xl shadow-lg transition-all duration-300 animate-in fade-in slide-in-from-top-2"
+                            style={{
+                                background: syncToast === 'success' ? 'linear-gradient(135deg, #4A7C59, #5B9A6E)' : 'linear-gradient(135deg, #C25B5B, #D4696E)',
+                                color: '#fff',
+                                boxShadow: '0 8px 30px rgba(0,0,0,0.12)',
+                            }}
+                        >
+                            {syncToast === 'success' ? <Check size={14} /> : <X size={14} />}
+                            <span className="text-xs font-medium">{syncToast === 'success' ? '已同步到飞书' : '飞书同步失败'}</span>
+                        </div>
+                    )}
                 </main>
             </div>
         </>
