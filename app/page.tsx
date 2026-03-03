@@ -191,11 +191,7 @@ export default function PlaygroundEditorial() {
 
     return (
         <>
-            {/* Google Fonts */}
-            {/* eslint-disable-next-line @next/next/no-page-custom-font */}
-            <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,800;1,400;1,600&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-
-            <div className="flex h-screen w-full overflow-hidden" style={{ fontFamily: "'DM Sans', sans-serif", background: '#FAF8F5' }}>
+            <div className="flex h-screen w-full overflow-hidden" style={{ fontFamily: "var(--font-dm-sans), sans-serif", background: '#FAF8F5' }}>
 
                 {/* ── LEFT SIDEBAR ── */}
                 <aside className="w-[440px] h-full flex flex-col shrink-0 border-r relative overflow-hidden" style={{ borderColor: '#E8E0D8', background: '#FFFDF9' }}>
@@ -212,7 +208,7 @@ export default function PlaygroundEditorial() {
                                 <Sparkles className="w-4 h-4 text-white" />
                             </div>
                             <div>
-                                <h1 className="text-xl font-bold tracking-tight" style={{ fontFamily: "'Playfair Display', serif", color: '#2C2016' }}>
+                                <h1 className="text-xl font-bold tracking-tight" style={{ fontFamily: "var(--font-playfair), serif", color: '#2C2016' }}>
                                     Moments
                                 </h1>
                                 <p className="text-[10px] tracking-[0.2em] uppercase" style={{ color: '#A89580' }}>Content Atelier</p>
@@ -464,7 +460,7 @@ export default function PlaygroundEditorial() {
 
                     {/* Top bar */}
                     <div className="h-14 flex items-center justify-between px-8 shrink-0" style={{ borderBottom: '1px solid #E8E0D8' }}>
-                        <span className="text-xs tracking-[0.15em] uppercase font-medium" style={{ color: '#A89580', fontFamily: "'DM Sans', sans-serif" }}>
+                        <span className="text-xs tracking-[0.15em] uppercase font-medium" style={{ color: '#A89580', fontFamily: "var(--font-dm-sans), sans-serif" }}>
                             Live Preview
                         </span>
                         <div className="flex items-center gap-1 p-1 rounded-lg" style={{ background: '#EDE5DA' }}>
@@ -510,7 +506,7 @@ export default function PlaygroundEditorial() {
                                     <div className="w-16 h-16 rounded-full flex items-center justify-center mb-4" style={{ background: 'linear-gradient(135deg, #C4956A, #A67C52)' }}>
                                         <Wand2 className="w-7 h-7 text-white animate-pulse" />
                                     </div>
-                                    <p className="text-sm font-semibold" style={{ color: '#2C2016', fontFamily: "'Playfair Display', serif" }}>Crafting your content...</p>
+                                    <p className="text-sm font-semibold" style={{ color: '#2C2016', fontFamily: "var(--font-playfair), serif" }}>Crafting your content...</p>
                                     <p className="text-xs mt-1" style={{ color: '#A89580' }}>This may take a moment</p>
                                 </div>
                             )}

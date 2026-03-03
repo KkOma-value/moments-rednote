@@ -60,12 +60,25 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // Check for Lark SDK-level errors
+    if (res?.code !== 0) {
+      console.error('Feishu API returned error:', JSON.stringify(res, null, 2));
+      return NextResponse.json(
+        { error: `Feishu API error: ${res?.msg || 'Unknown'}`, code: res?.code },
+        { status: 500 }
+      );
+    }
+
     return NextResponse.json({
       success: true,
       recordId: res?.data?.record?.record_id,
     });
-  } catch (error) {
+  } catch (error: unknown) {
+    // Log full error details for debugging
     console.error('Feishu sync error:', error);
+    if (error && typeof error === 'object' && 'response' in error) {
+      console.error('Feishu SDK response:', JSON.stringify((error as Record<string, unknown>).response, null, 2));
+    }
     const message = error instanceof Error ? error.message : '同步飞书失败';
     return NextResponse.json(
       { error: message },
