@@ -31,8 +31,8 @@ export default function PlaygroundAurora() {
     const [device, setDevice] = useState<DeviceMode>(DeviceMode.Phone);
     const [previewData, setPreviewData] = useState<PreviewData>({
         images: [],
-        style: '',
-        purpose: '',
+        style: [],
+        purpose: [],
         prompt: '',
     });
     const [isGenerating, setIsGenerating] = useState(false);
@@ -225,10 +225,38 @@ export default function PlaygroundAurora() {
                             </div>
 
                             {/* Style & Purpose */}
+                            <div className="grid grid-cols-2 gap-4 hidden">
+                                <div className="space-y-2">
+                                    <label className="text-xs font-medium text-gray-500">Style</label>
+                                    <Select value={previewData.style[0] || ''} onValueChange={(v) => setPreviewData(prev => ({ ...prev, style: [v] }))}>
+                                        <SelectTrigger className="h-10 bg-gray-50/50 border-gray-200">
+                                            <SelectValue placeholder="Choose style" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {STYLES.map(s => (
+                                                <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-xs font-medium text-gray-500">Purpose</label>
+                                    <Select value={previewData.purpose[0] || ''} onValueChange={(v) => setPreviewData(prev => ({ ...prev, purpose: [v] }))}>
+                                        <SelectTrigger className="h-10 bg-gray-50/50 border-gray-200">
+                                            <SelectValue placeholder="Choose purpose" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {PURPOSES.map(p => (
+                                                <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
                             <div className="grid grid-cols-2 gap-3">
                                 <div className="space-y-2">
                                     <label className="text-[11px] font-medium tracking-wider uppercase text-white/35">Style</label>
-                                    <Select value={previewData.style} onValueChange={(v) => setPreviewData(prev => ({ ...prev, style: v }))}>
+                                    <Select value={previewData.style[0] || ''} onValueChange={(v) => setPreviewData(prev => ({ ...prev, style: [v] }))}>
                                         <SelectTrigger className="rounded-xl h-11 text-sm border-0 ring-0" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)', color: '#E2E8F0' }}>
                                             <SelectValue placeholder="Choose" />
                                         </SelectTrigger>
@@ -241,7 +269,7 @@ export default function PlaygroundAurora() {
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-[11px] font-medium tracking-wider uppercase text-white/35">Purpose</label>
-                                    <Select value={previewData.purpose} onValueChange={(v) => setPreviewData(prev => ({ ...prev, purpose: v }))}>
+                                    <Select value={previewData.purpose[0] || ''} onValueChange={(v) => setPreviewData(prev => ({ ...prev, purpose: [v] }))}>
                                         <SelectTrigger className="rounded-xl h-11 text-sm border-0 ring-0" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)', color: '#E2E8F0' }}>
                                             <SelectValue placeholder="Choose" />
                                         </SelectTrigger>
@@ -347,8 +375,8 @@ export default function PlaygroundAurora() {
                     <div className="flex-1 flex items-center justify-center p-8 overflow-hidden relative">
                         <div
                             className={`relative bg-white overflow-hidden transition-all duration-700 ease-out flex flex-col ${device === DeviceMode.Phone
-                                    ? 'w-[390px] h-[780px] rounded-[48px]'
-                                    : 'w-[1100px] h-[700px] rounded-2xl'
+                                ? 'w-[390px] h-[780px] rounded-[48px]'
+                                : 'w-[1100px] h-[700px] rounded-2xl'
                                 }`}
                             style={{
                                 boxShadow: device === DeviceMode.Phone

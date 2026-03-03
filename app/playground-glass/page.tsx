@@ -30,8 +30,8 @@ export default function PlaygroundCyber() {
     const [device, setDevice] = useState<DeviceMode>(DeviceMode.Phone);
     const [previewData, setPreviewData] = useState<PreviewData>({
         images: [],
-        style: '',
-        purpose: '',
+        style: [],
+        purpose: [],
         prompt: '',
     });
     const [isGenerating, setIsGenerating] = useState(false);
@@ -216,11 +216,40 @@ export default function PlaygroundCyber() {
                                     <label className="text-[10px] tracking-[0.2em] uppercase font-mono" style={{ color: neonAccent, fontFamily: "'JetBrains Mono', monospace" }}>
                                         &gt; style
                                     </label>
-                                    <Select value={previewData.style} onValueChange={(v) => setPreviewData(prev => ({ ...prev, style: v }))}>
+                                    <Select value={previewData.style[0] || ''} onValueChange={(v) => setPreviewData(prev => ({ ...prev, style: [v] }))}>
                                         <SelectTrigger className="rounded-lg h-10 text-xs" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', color: '#E0E0E0' }}>
                                             <SelectValue placeholder="null" />
                                         </SelectTrigger>
                                         <SelectContent className="rounded-lg" style={{ background: '#0D0D14', border: '1px solid rgba(255,255,255,0.1)', color: '#E0E0E0' }}>
+                                            {/* Style & Purpose */}
+                                            <div className="grid grid-cols-2 gap-4 hidden">
+                                                <div className="space-y-2">
+                                                    <label className="text-[11px] uppercase tracking-wider font-semibold text-white/50 pl-1">Style</label>
+                                                    <Select value={previewData.style[0] || ''} onValueChange={(v) => setPreviewData(prev => ({ ...prev, style: [v] }))}>
+                                                        <SelectTrigger className="h-10 bg-white/5 border-white/10 text-white hover:bg-white/10 transition-colors">
+                                                            <SelectValue placeholder="Choose style" />
+                                                        </SelectTrigger>
+                                                        <SelectContent className="bg-[#2A2A35] border-white/10 text-white">
+                                                            {STYLES.map(s => (
+                                                                <SelectItem key={s.value} value={s.value} className="focus:bg-white/10 focus:text-white">{s.label}</SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <label className="text-[11px] uppercase tracking-wider font-semibold text-white/50 pl-1">Purpose</label>
+                                                    <Select value={previewData.purpose[0] || ''} onValueChange={(v) => setPreviewData(prev => ({ ...prev, purpose: [v] }))}>
+                                                        <SelectTrigger className="h-10 bg-white/5 border-white/10 text-white hover:bg-white/10 transition-colors">
+                                                            <SelectValue placeholder="Choose purpose" />
+                                                        </SelectTrigger>
+                                                        <SelectContent className="bg-[#2A2A35] border-white/10 text-white">
+                                                            {PURPOSES.map(p => (
+                                                                <SelectItem key={p.value} value={p.value} className="focus:bg-white/10 focus:text-white">{p.label}</SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                            </div>
                                             {STYLES.map(s => (
                                                 <SelectItem key={s.value} value={s.value} className="text-xs rounded-md">{s.label}</SelectItem>
                                             ))}
@@ -231,7 +260,7 @@ export default function PlaygroundCyber() {
                                     <label className="text-[10px] tracking-[0.2em] uppercase font-mono" style={{ color: neonAccent, fontFamily: "'JetBrains Mono', monospace" }}>
                                         &gt; purpose
                                     </label>
-                                    <Select value={previewData.purpose} onValueChange={(v) => setPreviewData(prev => ({ ...prev, purpose: v }))}>
+                                    <Select value={previewData.purpose[0] || ''} onValueChange={(v) => setPreviewData(prev => ({ ...prev, purpose: [v] }))}>
                                         <SelectTrigger className="rounded-lg h-10 text-xs" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', color: '#E0E0E0' }}>
                                             <SelectValue placeholder="null" />
                                         </SelectTrigger>
@@ -345,8 +374,8 @@ export default function PlaygroundCyber() {
                     <div className="flex-1 flex items-center justify-center p-8 overflow-hidden relative z-10">
                         <div
                             className={`relative bg-white overflow-hidden transition-all duration-700 ease-out flex flex-col ${device === DeviceMode.Phone
-                                    ? 'w-[390px] h-[780px] rounded-[48px]'
-                                    : 'w-[1100px] h-[700px] rounded-2xl'
+                                ? 'w-[390px] h-[780px] rounded-[48px]'
+                                : 'w-[1100px] h-[700px] rounded-2xl'
                                 }`}
                             style={{
                                 boxShadow: `0 0 40px ${neonAccent}15, 0 0 80px ${neonAccent}08, 0 24px 60px rgba(0,0,0,0.5)`,

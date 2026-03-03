@@ -30,8 +30,8 @@ export default function PlaygroundEditorial() {
     const [device, setDevice] = useState<DeviceMode>(DeviceMode.Phone);
     const [previewData, setPreviewData] = useState<PreviewData>({
         images: [],
-        style: '',
-        purpose: '',
+        style: STYLES.map(s => s.value),
+        purpose: PURPOSES.map(p => p.value),
         prompt: '',
     });
     const [isGenerating, setIsGenerating] = useState(false);
@@ -283,33 +283,77 @@ export default function PlaygroundEditorial() {
                                 </div>
                             </div>
 
-                            {/* Style & Purpose */}
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <label className="text-xs tracking-[0.15em] uppercase font-medium" style={{ color: '#A89580' }}>Style</label>
-                                    <Select value={previewData.style} onValueChange={(v) => setPreviewData(prev => ({ ...prev, style: v }))}>
-                                        <SelectTrigger className="rounded-xl h-9 text-sm" style={{ background: '#F5F0EA', border: '1px solid #E8E0D8', color: '#2C2016' }}>
-                                            <SelectValue placeholder="Choose style" />
-                                        </SelectTrigger>
-                                        <SelectContent className="rounded-xl" style={{ background: '#FFFDF9', border: '1px solid #E8E0D8' }}>
-                                            {STYLES.map(s => (
-                                                <SelectItem key={s.value} value={s.value} className="rounded-lg text-sm">{s.label}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                            {/* Style */}
+                            <div className="space-y-3">
+                                <label className="text-xs tracking-[0.15em] uppercase font-medium" style={{ color: '#A89580' }}>Style</label>
+                                <div className="grid grid-cols-2 gap-2">
+                                    {STYLES.map(s => {
+                                        const isSelected = previewData.style.includes(s.value);
+                                        return (
+                                            <button
+                                                key={s.value}
+                                                onClick={() => {
+                                                    setPreviewData(prev => ({
+                                                        ...prev,
+                                                        style: isSelected
+                                                            ? prev.style.filter(v => v !== s.value)
+                                                            : [...prev.style, s.value]
+                                                    }));
+                                                }}
+                                                className={`flex items-center gap-2 px-3 py-2 rounded-full text-[13px] transition-all duration-200 border w-full text-left`}
+                                                style={{
+                                                    background: isSelected ? '#C4956A' : 'transparent',
+                                                    borderColor: isSelected ? '#C4956A' : '#E8E0D8',
+                                                    color: isSelected ? '#FFF' : '#8A7D6F',
+                                                }}
+                                            >
+                                                <div className={`w-3.5 h-3.5 shrink-0 rounded-full border flex items-center justify-center`} style={{
+                                                    borderColor: isSelected ? 'rgba(255,255,255,0.6)' : '#D4C4B0',
+                                                    background: isSelected ? '#FFF' : 'transparent'
+                                                }}>
+                                                    {isSelected && <div className="w-1.5 h-1.5 rounded-full" style={{ background: '#C4956A' }} />}
+                                                </div>
+                                                <span className="truncate">{s.label}</span>
+                                            </button>
+                                        );
+                                    })}
                                 </div>
-                                <div className="space-y-2">
-                                    <label className="text-xs tracking-[0.15em] uppercase font-medium" style={{ color: '#A89580' }}>Purpose</label>
-                                    <Select value={previewData.purpose} onValueChange={(v) => setPreviewData(prev => ({ ...prev, purpose: v }))}>
-                                        <SelectTrigger className="rounded-xl h-9 text-sm" style={{ background: '#F5F0EA', border: '1px solid #E8E0D8', color: '#2C2016' }}>
-                                            <SelectValue placeholder="Choose purpose" />
-                                        </SelectTrigger>
-                                        <SelectContent className="rounded-xl" style={{ background: '#FFFDF9', border: '1px solid #E8E0D8' }}>
-                                            {PURPOSES.map(p => (
-                                                <SelectItem key={p.value} value={p.value} className="rounded-lg text-sm">{p.label}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                            </div>
+
+                            {/* Purpose */}
+                            <div className="space-y-3">
+                                <label className="text-xs tracking-[0.15em] uppercase font-medium" style={{ color: '#A89580' }}>Purpose</label>
+                                <div className="grid grid-cols-2 gap-2">
+                                    {PURPOSES.map(p => {
+                                        const isSelected = previewData.purpose.includes(p.value);
+                                        return (
+                                            <button
+                                                key={p.value}
+                                                onClick={() => {
+                                                    setPreviewData(prev => ({
+                                                        ...prev,
+                                                        purpose: isSelected
+                                                            ? prev.purpose.filter(v => v !== p.value)
+                                                            : [...prev.purpose, p.value]
+                                                    }));
+                                                }}
+                                                className={`flex items-center gap-2 px-3 py-2 rounded-full text-[13px] transition-all duration-200 border w-full text-left`}
+                                                style={{
+                                                    background: isSelected ? '#C4956A' : 'transparent',
+                                                    borderColor: isSelected ? '#C4956A' : '#E8E0D8',
+                                                    color: isSelected ? '#FFF' : '#8A7D6F',
+                                                }}
+                                            >
+                                                <div className={`w-3.5 h-3.5 shrink-0 rounded-full border flex items-center justify-center`} style={{
+                                                    borderColor: isSelected ? 'rgba(255,255,255,0.6)' : '#D4C4B0',
+                                                    background: isSelected ? '#FFF' : 'transparent'
+                                                }}>
+                                                    {isSelected && <div className="w-1.5 h-1.5 rounded-full" style={{ background: '#C4956A' }} />}
+                                                </div>
+                                                <span className="truncate">{p.label}</span>
+                                            </button>
+                                        );
+                                    })}
                                 </div>
                             </div>
 

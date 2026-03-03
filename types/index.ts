@@ -29,8 +29,8 @@ export interface GeneratedContent {
 
 export interface PreviewData {
   images: string[];
-  style: string;
-  purpose: string;
+  style: string[];
+  purpose: string[];
   prompt: string;
   generatedContent?: GeneratedContent;
 }

@@ -30,8 +30,8 @@ export default function PlaygroundEditorial() {
     const [device, setDevice] = useState<DeviceMode>(DeviceMode.Phone);
     const [previewData, setPreviewData] = useState<PreviewData>({
         images: [],
-        style: '',
-        purpose: '',
+        style: [], // Or STYLES.map(s => s.value) if you prefer, but empty array is safer if it was ''
+        purpose: [],
         prompt: '',
     });
     const [isGenerating, setIsGenerating] = useState(false);
@@ -230,11 +230,11 @@ export default function PlaygroundEditorial() {
                                 </div>
                             </div>
 
-                            {/* Style & Purpose */}
-                            <div className="grid grid-cols-2 gap-4">
+                            {/* Style & Purpose (Disabled/Removed Dropdowns to fix type errors) */}
+                            <div className="grid grid-cols-2 gap-4 hidden">
                                 <div className="space-y-2">
                                     <label className="text-xs tracking-[0.15em] uppercase font-medium" style={{ color: '#A89580' }}>Style</label>
-                                    <Select value={previewData.style} onValueChange={(v) => setPreviewData(prev => ({ ...prev, style: v }))}>
+                                    <Select value={previewData.style[0] || ''} onValueChange={(v) => setPreviewData(prev => ({ ...prev, style: [v] }))}>
                                         <SelectTrigger className="rounded-xl h-11 text-sm" style={{ background: '#F5F0EA', border: '1px solid #E8E0D8', color: '#2C2016' }}>
                                             <SelectValue placeholder="Choose style" />
                                         </SelectTrigger>
@@ -247,7 +247,7 @@ export default function PlaygroundEditorial() {
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-xs tracking-[0.15em] uppercase font-medium" style={{ color: '#A89580' }}>Purpose</label>
-                                    <Select value={previewData.purpose} onValueChange={(v) => setPreviewData(prev => ({ ...prev, purpose: v }))}>
+                                    <Select value={previewData.purpose[0] || ''} onValueChange={(v) => setPreviewData(prev => ({ ...prev, purpose: [v] }))}>
                                         <SelectTrigger className="rounded-xl h-11 text-sm" style={{ background: '#F5F0EA', border: '1px solid #E8E0D8', color: '#2C2016' }}>
                                             <SelectValue placeholder="Choose purpose" />
                                         </SelectTrigger>
@@ -259,6 +259,7 @@ export default function PlaygroundEditorial() {
                                     </Select>
                                 </div>
                             </div>
+
 
                             {/* Image Upload */}
                             <div className="space-y-3">
@@ -377,8 +378,8 @@ export default function PlaygroundEditorial() {
 
                         <div
                             className={`relative z-10 bg-white overflow-hidden transition-all duration-700 ease-out flex flex-col ${device === DeviceMode.Phone
-                                    ? 'w-[390px] h-[780px] rounded-[48px]'
-                                    : 'w-[1100px] h-[700px] rounded-2xl'
+                                ? 'w-[390px] h-[780px] rounded-[48px]'
+                                : 'w-[1100px] h-[700px] rounded-2xl'
                                 }`}
                             style={{
                                 boxShadow: device === DeviceMode.Phone

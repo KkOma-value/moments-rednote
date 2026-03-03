@@ -34,11 +34,14 @@ export async function POST(request: Request) {
 
     // 2. 构建用户消息
     let userMessage = prompt.trim();
-    if (style) {
-      userMessage += `\n风格偏好：${style}`;
+    const styleStr = Array.isArray(style) ? style.join('，') : (style || '');
+    const purposeStr = Array.isArray(purpose) ? purpose.join('，') : (purpose || '');
+
+    if (styleStr) {
+      userMessage += `\n风格偏好：${styleStr}`;
     }
-    if (purpose) {
-      userMessage += `\n创作目的：${purpose}`;
+    if (purposeStr) {
+      userMessage += `\n创作目的：${purposeStr}`;
     }
 
     // 3. 构建消息内容（支持多模态图片）

@@ -53,8 +53,8 @@ export async function POST(request: NextRequest) {
         fields: {
           'UserId': userId || '',
           '内容': content,
-          'Purpose': purpose || '',
-          'Style': style || '',
+          'Purpose': Array.isArray(purpose) ? purpose.join(', ') : (purpose || ''),
+          'Style': Array.isArray(style) ? style.join(', ') : (style || ''),
           'CreateTime': Date.now(),
         },
       },
