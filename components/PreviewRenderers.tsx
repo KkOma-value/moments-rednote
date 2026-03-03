@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { PreviewData } from '@/types';
 import { Heart, MessageCircle, Share2, MoreHorizontal, Camera, ArrowLeft, Star, Wand2 } from 'lucide-react';
 
@@ -90,7 +90,8 @@ function getWeChatGridClass(count: number): string {
 // WeChat Moments Preview
 // ==========================================
 export function WeChatPreview({ data }: RendererProps) {
-  const timeString = formatCurrentTime();
+  const [timeString, setTimeString] = useState('9:41');
+  useEffect(() => { setTimeString(formatCurrentTime()); }, []);
   const hasImages = data.images.length > 0;
   const gc = data.generatedContent;
   const hasGenerated = gc && (gc.body || gc.title);
@@ -239,7 +240,8 @@ export function WeChatPreview({ data }: RendererProps) {
 // RedNote Preview
 // ==========================================
 export function RedNotePreview({ data }: RendererProps) {
-  const currentDate = new Date();
+  const [dateString, setDateString] = useState('');
+  useEffect(() => { setDateString(new Date().toLocaleDateString('zh-CN')); }, []);
   const hasImages = data.images.length > 0;
   const gc = data.generatedContent;
   const hasGenerated = gc && (gc.body || gc.title);
@@ -337,7 +339,7 @@ export function RedNotePreview({ data }: RendererProps) {
             </>
           )}
 
-          <div className="text-xs text-gray-400 mb-6">编辑于 {currentDate.toLocaleDateString('zh-CN')}</div>
+          <div className="text-xs text-gray-400 mb-6">{dateString ? `编辑于 ${dateString}` : '\u00A0'}</div>
 
           <div className="border-t border-gray-100 my-4" />
 

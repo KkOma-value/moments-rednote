@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
       },
       data: {
         fields: {
-          'UserID': userId || '',
+          'UserId': userId || '',
           '内容': content,
           'Purpose': purpose || '',
           'Style': style || '',
@@ -76,6 +76,9 @@ export async function POST(request: NextRequest) {
   } catch (error: unknown) {
     // Log full error details for debugging
     console.error('Feishu sync error:', error);
+    try {
+      console.error('Feishu sync error (stringified):', JSON.stringify(error, Object.getOwnPropertyNames(error as object), 2));
+    } catch { /* ignore serialization errors */ }
     if (error && typeof error === 'object' && 'response' in error) {
       console.error('Feishu SDK response:', JSON.stringify((error as Record<string, unknown>).response, null, 2));
     }

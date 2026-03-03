@@ -11,6 +11,8 @@ function getOpenAIClient() {
   return new OpenAI({
     apiKey: process.env.ARK_API_KEY || '',
     baseURL: process.env.ARK_BASE_URL || 'https://ark.cn-beijing.volces.com/api/v3',
+    timeout: 60000, // 60 seconds timeout for slow AI responses
+    maxRetries: 2,  // Retry up to 2 times on transient failures
   });
 }
 
