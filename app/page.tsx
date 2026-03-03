@@ -10,7 +10,7 @@ import { STYLES, PURPOSES } from '@/lib/constants';
 import { WeChatPreview, RedNotePreview } from '@/components/PreviewRenderers';
 import {
     Sparkles, MessageCircle, Heart, Upload, Monitor, Smartphone,
-    Zap, X, Loader2, Copy, Check, Wand2
+    Zap, X, Loader2, Copy, Check, Wand2, Clock, ChevronRight
 } from 'lucide-react';
 
 /*
@@ -67,7 +67,7 @@ export default function PlaygroundEditorial() {
             autoGenerateRef.current = false;
             handleGenerate();
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [previewData.prompt]);
 
     // ── Handlers (same logic as original) ──
@@ -136,16 +136,33 @@ export default function PlaygroundEditorial() {
         setIsGenerating(false);
     }
 
+    function buildFullCopyText(): string {
+        const gc = previewData.generatedContent;
+        if (!gc) return '';
+        // If rawText exists and is non-empty, use it directly
+        if (gc.rawText && gc.rawText.trim()) return gc.rawText;
+        // Otherwise manually assemble: title + body + tags
+        const parts: string[] = [];
+        if (gc.title) parts.push(gc.title);
+        if (gc.body) parts.push(gc.body);
+        if (gc.tags && gc.tags.length > 0) {
+            parts.push('');
+            parts.push(gc.tags.map(t => `#${t}`).join(' '));
+        }
+        return parts.join('\n');
+    }
+
     async function handleCopyAndSync() {
         const gc = previewData.generatedContent;
         if (!gc) return;
-        try { await navigator.clipboard.writeText(gc.body); setIsCopied(true); setTimeout(() => setIsCopied(false), 2000); } catch { }
+        const fullText = buildFullCopyText();
+        try { await navigator.clipboard.writeText(fullText); setIsCopied(true); setTimeout(() => setIsCopied(false), 2000); } catch { }
         setIsSyncing(true);
         try {
             await fetch('/api/feishu-sync', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ content: gc.body, purpose: previewData.purpose, style: previewData.style, platform, userId }),
+                body: JSON.stringify({ content: fullText, purpose: previewData.purpose, style: previewData.style, platform, userId }),
             });
         } catch { } finally { setIsSyncing(false); }
     }
@@ -167,29 +184,29 @@ export default function PlaygroundEditorial() {
                     }} />
 
                     {/* Header */}
-                    <div className="px-8 pt-8 pb-6 relative z-10">
+                    <div className="px-6 pt-5 pb-4 relative z-10">
                         <div className="flex items-center gap-4 mb-1">
-                            <div className="w-11 h-11 rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #C4956A, #A67C52)' }}>
-                                <Sparkles className="w-5 h-5 text-white" />
+                            <div className="w-9 h-9 rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #C4956A, #A67C52)' }}>
+                                <Sparkles className="w-4 h-4 text-white" />
                             </div>
                             <div>
-                                <h1 className="text-2xl font-bold tracking-tight" style={{ fontFamily: "'Playfair Display', serif", color: '#2C2016' }}>
+                                <h1 className="text-xl font-bold tracking-tight" style={{ fontFamily: "'Playfair Display', serif", color: '#2C2016' }}>
                                     Moments
                                 </h1>
-                                <p className="text-xs tracking-[0.2em] uppercase" style={{ color: '#A89580' }}>Content Atelier</p>
+                                <p className="text-[10px] tracking-[0.2em] uppercase" style={{ color: '#A89580' }}>Content Atelier</p>
                             </div>
                         </div>
                     </div>
 
                     {/* Separator line with diamond ornament */}
-                    <div className="relative px-8">
+                    <div className="relative px-6">
                         <div className="h-px w-full" style={{ background: '#E8E0D8' }} />
                         <div className="absolute left-1/2 -translate-x-1/2 -top-1 w-2 h-2 rotate-45" style={{ background: '#C4956A', border: '1px solid #E8E0D8' }} />
                     </div>
 
                     {/* Content - Scrollable */}
-                    <ScrollArea className="flex-1 relative z-10">
-                        <div className="px-8 py-6 space-y-8">
+                    <div className="flex-1 overflow-y-auto min-h-0 relative z-10 custom-scrollbar">
+                        <div className="px-6 py-3 space-y-4">
 
                             {/* Platform Selector */}
                             <div className="space-y-3">
@@ -199,7 +216,7 @@ export default function PlaygroundEditorial() {
                                 <div className="grid grid-cols-2 gap-3">
                                     <button
                                         onClick={() => setPlatform(Platform.WeChat)}
-                                        className="flex flex-col items-center gap-2 p-4 rounded-xl transition-all duration-300"
+                                        className="flex flex-row items-center justify-center gap-2 p-2.5 rounded-xl transition-all duration-300"
                                         style={{
                                             background: platform === Platform.WeChat ? 'linear-gradient(135deg, #4A7C59, #5B9A6E)' : '#F5F0EA',
                                             color: platform === Platform.WeChat ? '#fff' : '#8A7D6F',
@@ -207,12 +224,12 @@ export default function PlaygroundEditorial() {
                                             boxShadow: platform === Platform.WeChat ? '0 4px 16px rgba(74,124,89,0.3)' : 'none',
                                         }}
                                     >
-                                        <MessageCircle className="w-5 h-5" />
+                                        <MessageCircle className="w-4 h-4" />
                                         <span className="text-sm font-medium">WeChat</span>
                                     </button>
                                     <button
                                         onClick={() => setPlatform(Platform.RedNote)}
-                                        className="flex flex-col items-center gap-2 p-4 rounded-xl transition-all duration-300"
+                                        className="flex flex-row items-center justify-center gap-2 p-2.5 rounded-xl transition-all duration-300"
                                         style={{
                                             background: platform === Platform.RedNote ? 'linear-gradient(135deg, #C25B5B, #D4696E)' : '#F5F0EA',
                                             color: platform === Platform.RedNote ? '#fff' : '#8A7D6F',
@@ -220,7 +237,7 @@ export default function PlaygroundEditorial() {
                                             boxShadow: platform === Platform.RedNote ? '0 4px 16px rgba(194,91,91,0.3)' : 'none',
                                         }}
                                     >
-                                        <Heart className="w-5 h-5" />
+                                        <Heart className="w-4 h-4" />
                                         <span className="text-sm font-medium">RedNote</span>
                                     </button>
                                 </div>
@@ -233,7 +250,7 @@ export default function PlaygroundEditorial() {
                                 </label>
                                 <Textarea
                                     placeholder="Tell us about your content vision..."
-                                    className="min-h-[130px] resize-none rounded-xl text-sm leading-relaxed"
+                                    className="min-h-[80px] resize-none rounded-xl text-sm leading-relaxed"
                                     style={{
                                         background: '#F5F0EA',
                                         border: '1px solid #E8E0D8',
@@ -253,7 +270,7 @@ export default function PlaygroundEditorial() {
                                 <div className="space-y-2">
                                     <label className="text-xs tracking-[0.15em] uppercase font-medium" style={{ color: '#A89580' }}>Style</label>
                                     <Select value={previewData.style} onValueChange={(v) => setPreviewData(prev => ({ ...prev, style: v }))}>
-                                        <SelectTrigger className="rounded-xl h-11 text-sm" style={{ background: '#F5F0EA', border: '1px solid #E8E0D8', color: '#2C2016' }}>
+                                        <SelectTrigger className="rounded-xl h-9 text-sm" style={{ background: '#F5F0EA', border: '1px solid #E8E0D8', color: '#2C2016' }}>
                                             <SelectValue placeholder="Choose style" />
                                         </SelectTrigger>
                                         <SelectContent className="rounded-xl" style={{ background: '#FFFDF9', border: '1px solid #E8E0D8' }}>
@@ -266,7 +283,7 @@ export default function PlaygroundEditorial() {
                                 <div className="space-y-2">
                                     <label className="text-xs tracking-[0.15em] uppercase font-medium" style={{ color: '#A89580' }}>Purpose</label>
                                     <Select value={previewData.purpose} onValueChange={(v) => setPreviewData(prev => ({ ...prev, purpose: v }))}>
-                                        <SelectTrigger className="rounded-xl h-11 text-sm" style={{ background: '#F5F0EA', border: '1px solid #E8E0D8', color: '#2C2016' }}>
+                                        <SelectTrigger className="rounded-xl h-9 text-sm" style={{ background: '#F5F0EA', border: '1px solid #E8E0D8', color: '#2C2016' }}>
                                             <SelectValue placeholder="Choose purpose" />
                                         </SelectTrigger>
                                         <SelectContent className="rounded-xl" style={{ background: '#FFFDF9', border: '1px solid #E8E0D8' }}>
@@ -317,15 +334,15 @@ export default function PlaygroundEditorial() {
                                 ) : (
                                     <div
                                         onClick={() => !isUploading && fileInputRef.current?.click()}
-                                        className="h-28 rounded-xl border border-dashed flex flex-col items-center justify-center cursor-pointer transition-all hover:opacity-80 group"
+                                        className="h-20 rounded-xl border border-dashed flex flex-col items-center justify-center cursor-pointer transition-all hover:opacity-80 group"
                                         style={{ borderColor: '#D4C4B0', background: '#F5F0EA' }}
                                     >
                                         {isUploading ? (
-                                            <Loader2 className="w-6 h-6 animate-spin" style={{ color: '#C4956A' }} />
+                                            <Loader2 className="w-5 h-5 animate-spin" style={{ color: '#C4956A' }} />
                                         ) : (
                                             <>
-                                                <div className="w-10 h-10 rounded-full flex items-center justify-center mb-2 transition-transform group-hover:scale-110" style={{ background: '#EDE5DA' }}>
-                                                    <Upload className="w-4 h-4" style={{ color: '#C4956A' }} />
+                                                <div className="w-8 h-8 rounded-full flex items-center justify-center mb-1.5 transition-transform group-hover:scale-110" style={{ background: '#EDE5DA' }}>
+                                                    <Upload className="w-3.5 h-3.5" style={{ color: '#C4956A' }} />
                                                 </div>
                                                 <p className="text-xs font-medium" style={{ color: '#8A7D6F' }}>Drop images or click to browse</p>
                                             </>
@@ -334,16 +351,55 @@ export default function PlaygroundEditorial() {
                                 )}
                             </div>
 
-                        </div>
-                    </ScrollArea>
+                            {/* History */}
+                            <div className="space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <label className="text-xs tracking-[0.15em] uppercase font-medium" style={{ color: '#A89580' }}>
+                                        History
+                                    </label>
+                                    <button className="text-xs font-medium" style={{ color: '#C4956A' }}>View All</button>
+                                </div>
+                                <div className="space-y-2">
+                                    {[
+                                        { id: '1', title: '夏季防晒霜推广', time: '10:30 AM', platform: 'rednote' as const },
+                                        { id: '2', title: '周末咖啡探店', time: 'Yesterday', platform: 'wechat' as const },
+                                        { id: '3', title: '新款机械键盘评测', time: '2 days ago', platform: 'rednote' as const },
+                                    ].map((item) => (
+                                        <button
+                                            key={item.id}
+                                            className="w-full flex items-center gap-3 p-2 rounded-xl transition-all duration-200 text-left group"
+                                            style={{ background: '#F5F0EA', border: '1px solid #E8E0D8' }}
+                                        >
+                                            <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{
+                                                background: item.platform === 'wechat'
+                                                    ? 'linear-gradient(135deg, #4A7C59, #5B9A6E)'
+                                                    : 'linear-gradient(135deg, #C25B5B, #D4696E)',
+                                            }}>
+                                                {item.platform === 'wechat'
+                                                    ? <MessageCircle className="w-3.5 h-3.5 text-white" />
+                                                    : <Heart className="w-3.5 h-3.5 text-white" />
+                                                }
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm font-medium truncate" style={{ color: '#2C2016' }}>{item.title}</p>
+                                                <p className="text-xs" style={{ color: '#A89580' }}>{item.time}</p>
+                                            </div>
+                                            <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: '#A89580' }} />
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
 
-                    {/* Generate Button */}
-                    <div className="p-6 relative z-10" style={{ borderTop: '1px solid #E8E0D8' }}>
-                        {generateError && <p className="text-xs mb-2 text-center" style={{ color: '#C25B5B' }}>{generateError}</p>}
+                        </div>
+                    </div>
+
+                    {/* Bottom Buttons */}
+                    <div className="p-4 relative z-10 space-y-2" style={{ borderTop: '1px solid #E8E0D8' }}>
+                        {generateError && <p className="text-xs mb-1 text-center" style={{ color: '#C25B5B' }}>{generateError}</p>}
                         <button
                             onClick={handleGenerate}
                             disabled={isGenerating}
-                            className="w-full py-4 rounded-xl font-semibold text-white text-sm transition-all duration-300 flex items-center justify-center gap-2"
+                            className="w-full py-3 rounded-xl font-semibold text-white text-[13px] transition-all duration-300 flex items-center justify-center gap-2"
                             style={{
                                 background: platform === Platform.WeChat
                                     ? 'linear-gradient(135deg, #4A7C59, #5B9A6E)'
@@ -365,6 +421,19 @@ export default function PlaygroundEditorial() {
                                 Cancel
                             </button>
                         )}
+                        <button
+                            onClick={handleCopyAndSync}
+                            disabled={isSyncing || !previewData.generatedContent}
+                            className={`w-full py-3 rounded-xl font-medium text-sm transition-all duration-300 flex items-center justify-center gap-2 ${!previewData.generatedContent ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            style={{
+                                background: isCopied ? 'linear-gradient(135deg, #4A7C59, #5B9A6E)' : '#F5F0EA',
+                                color: isCopied ? '#fff' : '#2C2016',
+                                border: '1px solid #E8E0D8',
+                                boxShadow: isCopied ? '0 4px 12px rgba(74,124,89,0.2)' : 'none',
+                            }}
+                        >
+                            {isCopied ? <><Check size={16} /> 已复制</> : isSyncing ? <><Loader2 size={16} className="animate-spin" /> 同步中...</> : <><Copy size={16} /> 复制文案</>}
+                        </button>
                     </div>
                 </aside>
 
@@ -395,8 +464,8 @@ export default function PlaygroundEditorial() {
 
                         <div
                             className={`relative z-10 bg-white overflow-hidden transition-all duration-700 ease-out flex flex-col ${device === DeviceMode.Phone
-                                    ? 'w-[390px] h-[780px] rounded-[48px]'
-                                    : 'w-[1100px] h-[700px] rounded-2xl'
+                                ? 'w-[390px] h-[780px] rounded-[48px]'
+                                : 'w-[1100px] h-[700px] rounded-2xl'
                                 }`}
                             style={{
                                 boxShadow: device === DeviceMode.Phone
@@ -425,22 +494,7 @@ export default function PlaygroundEditorial() {
                             )}
                         </div>
 
-                        {/* Copy button */}
-                        {previewData.generatedContent && (
-                            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20">
-                                <button
-                                    onClick={handleCopyAndSync}
-                                    disabled={isSyncing}
-                                    className="flex items-center gap-2 px-6 py-3 rounded-full text-white text-sm font-medium transition-all duration-300"
-                                    style={{
-                                        background: isCopied ? 'linear-gradient(135deg, #4A7C59, #5B9A6E)' : 'linear-gradient(135deg, #C4956A, #A67C52)',
-                                        boxShadow: '0 4px 20px rgba(196,149,106,0.35)',
-                                    }}
-                                >
-                                    {isCopied ? <><Check size={16} /> 已复制</> : isSyncing ? <><Loader2 size={16} className="animate-spin" /> 同步中...</> : <><Copy size={16} /> 复制文案</>}
-                                </button>
-                            </div>
-                        )}
+
                     </div>
                 </main>
             </div>
