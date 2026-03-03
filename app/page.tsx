@@ -30,8 +30,8 @@ export default function PlaygroundEditorial() {
     const [device, setDevice] = useState<DeviceMode>(DeviceMode.Phone);
     const [previewData, setPreviewData] = useState<PreviewData>({
         images: [],
-        style: STYLES.map(s => s.value),
-        purpose: PURPOSES.map(p => p.value),
+        style: [], // No longer default selecting all
+        purpose: [],
         prompt: '',
     });
     const [isGenerating, setIsGenerating] = useState(false);
@@ -295,9 +295,7 @@ export default function PlaygroundEditorial() {
                                                 onClick={() => {
                                                     setPreviewData(prev => ({
                                                         ...prev,
-                                                        style: isSelected
-                                                            ? prev.style.filter(v => v !== s.value)
-                                                            : [...prev.style, s.value]
+                                                        style: isSelected ? [] : [s.value] // Only allow one selection at a time
                                                     }));
                                                 }}
                                                 className={`flex items-center gap-2 px-3 py-2 rounded-full text-[13px] transition-all duration-200 border w-full text-left`}
@@ -332,9 +330,7 @@ export default function PlaygroundEditorial() {
                                                 onClick={() => {
                                                     setPreviewData(prev => ({
                                                         ...prev,
-                                                        purpose: isSelected
-                                                            ? prev.purpose.filter(v => v !== p.value)
-                                                            : [...prev.purpose, p.value]
+                                                        purpose: isSelected ? [] : [p.value] // Only allow one selection at a time
                                                     }));
                                                 }}
                                                 className={`flex items-center gap-2 px-3 py-2 rounded-full text-[13px] transition-all duration-200 border w-full text-left`}
