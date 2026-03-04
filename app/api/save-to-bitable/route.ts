@@ -125,8 +125,12 @@ export async function POST(request: NextRequest) {
       'Purpose': Array.isArray(purpose) ? purpose.join(', ') : (purpose || ''),
       'Style': Array.isArray(style) ? style.join(', ') : (style || ''),
       'CreateTime': new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' }),
-      'UserId': userId || '',
     };
+
+    // 仅在有 userId 时写入，避免覆盖 Aily 已设置的值
+    if (userId) {
+      fields['UserId'] = userId;
+    }
 
     // 如果有 photo（base64），上传到飞书并写入附件字段
     if (photo && typeof photo === 'string') {
