@@ -140,6 +140,10 @@ export async function POST(request: NextRequest) {
 
     const client = getFeishuClient();
 
+    console.log('[save-to-bitable] fields:', JSON.stringify(Object.keys(fields)));
+    console.log('[save-to-bitable] recordId:', recordId || '(none, will create)');
+    console.log('[save-to-bitable] appToken:', appToken, 'tableId:', tableId);
+
     if (recordId) {
       // Aily 工作流已创建记录，用 PUT 更新
       const res = await client.bitable.v1.appTableRecord.update({
