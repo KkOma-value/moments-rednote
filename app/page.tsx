@@ -161,12 +161,19 @@ export default function PlaygroundEditorial() {
             };
             if (recordId) saveBody.recordId = recordId;
             if (imageBase64List.length > 0) saveBody.photo = imageBase64List[0];
+            const isFirstUpdate = !!recordId;
             fetch('/api/save-to-bitable', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(saveBody),
             })
-                .then(r => { if (r.ok) { setSyncToast('success'); } else { setSyncToast('error'); } })
+                .then(r => {
+                    if (r.ok) {
+                        setSyncToast('success');
+                        // 首次用 rid 更新成功后清除，后续生成创建新记录
+                        if (isFirstUpdate) setRecordId(null);
+                    } else { setSyncToast('error'); }
+                })
                 .catch(() => setSyncToast('error'))
                 .finally(() => setTimeout(() => setSyncToast(null), 2500));
         } catch (error: unknown) {
