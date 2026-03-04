@@ -100,7 +100,7 @@ async function uploadBase64ToFeishu(
 
 export async function POST(request: NextRequest) {
   try {
-    const { content, platform, purpose, style, recordId, photo } = await request.json();
+    const { content, platform, purpose, style, recordId, photo, userId } = await request.json();
 
     if (!content || typeof content !== 'string') {
       return NextResponse.json({ error: '内容不能为空' }, { status: 400 });
@@ -125,6 +125,7 @@ export async function POST(request: NextRequest) {
       'Purpose': Array.isArray(purpose) ? purpose.join(', ') : (purpose || ''),
       'Style': Array.isArray(style) ? style.join(', ') : (style || ''),
       'CreateTime': Date.now(),
+      'UserId': userId || '',
     };
 
     // 如果有 photo（base64），上传到飞书并写入附件字段

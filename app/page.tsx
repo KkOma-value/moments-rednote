@@ -157,6 +157,7 @@ export default function PlaygroundEditorial() {
                 platform,
                 purpose: previewData.purpose,
                 style: previewData.style,
+                userId: userId || '',
             };
             if (recordId) saveBody.recordId = recordId;
             if (imageBase64List.length > 0) saveBody.photo = imageBase64List[0];
@@ -211,6 +212,7 @@ export default function PlaygroundEditorial() {
                 platform,
                 purpose: previewData.purpose,
                 style: previewData.style,
+                userId: userId || '',
             };
             if (recordId) saveBody.recordId = recordId;
             if (imageBase64List.length > 0) saveBody.photo = imageBase64List[0];
