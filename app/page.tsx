@@ -41,6 +41,8 @@ export default function PlaygroundEditorial() {
     const [isSyncing, setIsSyncing] = useState(false);
     const [syncToast, setSyncToast] = useState<null | 'success' | 'error'>(null);
     const [userId, setUserId] = useState<string>('');
+    const [recordId, setRecordId] = useState<string | null>(null);
+    const [imageBase64List, setImageBase64List] = useState<string[]>([]);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const abortControllerRef = useRef<AbortController | null>(null);
     const autoGenerateRef = useRef(false);
@@ -49,7 +51,9 @@ export default function PlaygroundEditorial() {
         const params = new URLSearchParams(window.location.search);
         const uid = params.get('userId');
         const plt = params.get('platform');
+        const rid = params.get('rid');
         if (uid) setUserId(uid);
+        if (rid) setRecordId(rid);
         if (plt === 'rednote') setPlatform(Platform.RedNote);
         else if (plt === 'wechat') setPlatform(Platform.WeChat);
 
@@ -89,6 +93,17 @@ export default function PlaygroundEditorial() {
             const data = await response.json();
             const newUrls = data.blobs.map((blob: { url: string }) => blob.url);
             setPreviewData(prev => ({ ...prev, images: [...prev.images, ...newUrls] }));
+
+            // 保存 base64 用于飞书上传
+            const base64Promises = Array.from(files).map(file => {
+                return new Promise<string>((resolve) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => resolve(reader.result as string);
+                    reader.readAsDataURL(file);
+                });
+            });
+            const base64Results = await Promise.all(base64Promises);
+            setImageBase64List(prev => [...prev, ...base64Results]);
         } catch (error) {
             console.error('Upload error:', error);
             alert(error instanceof Error ? error.message : '图片上传失败，请重试');
@@ -100,10 +115,12 @@ export default function PlaygroundEditorial() {
 
     function handleRemoveImage(index: number) {
         setPreviewData(prev => ({ ...prev, images: prev.images.filter((_, i) => i !== index) }));
+        setImageBase64List(prev => prev.filter((_, i) => i !== index));
     }
 
     function handleClearAllImages() {
         setPreviewData(prev => ({ ...prev, images: [] }));
+        setImageBase64List([]);
     }
 
     function buildTextFromContent(gc: GeneratedContent): string {
@@ -133,12 +150,20 @@ export default function PlaygroundEditorial() {
             const generatedContent = data.content as GeneratedContent;
             setPreviewData(prev => ({ ...prev, generatedContent, prompt: '' }));
 
-            // Auto-save to Feishu (fire-and-forget)
+            // Auto-save to Feishu Bitable (fire-and-forget)
             const fullText = buildTextFromContent(generatedContent);
-            fetch('/api/feishu-sync', {
+            const saveBody: Record<string, unknown> = {
+                content: fullText,
+                platform,
+                purpose: previewData.purpose,
+                style: previewData.style,
+            };
+            if (recordId) saveBody.recordId = recordId;
+            if (imageBase64List.length > 0) saveBody.photo = imageBase64List[0];
+            fetch('/api/save-to-bitable', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ content: fullText, purpose: previewData.purpose, style: previewData.style, platform, userId }),
+                body: JSON.stringify(saveBody),
             })
                 .then(r => { if (r.ok) { setSyncToast('success'); } else { setSyncToast('error'); } })
                 .catch(() => setSyncToast('error'))
@@ -181,10 +206,18 @@ export default function PlaygroundEditorial() {
         try { await navigator.clipboard.writeText(fullText); setIsCopied(true); setTimeout(() => setIsCopied(false), 2000); } catch { }
         setIsSyncing(true);
         try {
-            await fetch('/api/feishu-sync', {
+            const saveBody: Record<string, unknown> = {
+                content: fullText,
+                platform,
+                purpose: previewData.purpose,
+                style: previewData.style,
+            };
+            if (recordId) saveBody.recordId = recordId;
+            if (imageBase64List.length > 0) saveBody.photo = imageBase64List[0];
+            await fetch('/api/save-to-bitable', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ content: fullText, purpose: previewData.purpose, style: previewData.style, platform, userId }),
+                body: JSON.stringify(saveBody),
             });
         } catch { } finally { setIsSyncing(false); }
     }
