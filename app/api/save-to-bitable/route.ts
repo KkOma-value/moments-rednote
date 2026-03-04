@@ -124,7 +124,7 @@ export async function POST(request: NextRequest) {
       '内容': content,
       'Purpose': Array.isArray(purpose) ? purpose.join(', ') : (purpose || ''),
       'Style': Array.isArray(style) ? style.join(', ') : (style || ''),
-      'CreateTime': Date.now(),
+      'CreateTime': new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' }),
       'UserId': userId || '',
     };
 
