@@ -167,11 +167,17 @@ export default function PlaygroundEditorial() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(saveBody),
             })
-                .then(r => {
+                .then(async r => {
                     if (r.ok) {
                         setSyncToast('success');
-                        // 首次用 rid 更新成功后清除，后续生成创建新记录
-                        if (isFirstUpdate) setRecordId(null);
+                        // 首次用 rid 更新成功后，保存原记录的 UserId，然后清除 rid
+                        if (isFirstUpdate) {
+                            try {
+                                const data = await r.json();
+                                if (data.existingUserId) setUserId(data.existingUserId);
+                            } catch { /* ignore */ }
+                            setRecordId(null);
+                        }
                     } else { setSyncToast('error'); }
                 })
                 .catch(() => setSyncToast('error'))

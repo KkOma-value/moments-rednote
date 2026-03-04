@@ -149,6 +149,19 @@ export async function POST(request: NextRequest) {
     console.log('[save-to-bitable] appToken:', appToken, 'tableId:', tableId);
 
     if (recordId) {
+      // 先读取原记录，获取 Aily 设置的 UserId
+      let existingUserId = '';
+      try {
+        const getRes = await client.bitable.v1.appTableRecord.get({
+          path: { app_token: appToken, table_id: tableId, record_id: recordId },
+        });
+        if (getRes?.code === 0) {
+          existingUserId = (getRes.data?.record?.fields?.['UserId'] as string) || '';
+        }
+      } catch (e) {
+        console.error('Failed to read existing record:', e);
+      }
+
       // Aily 工作流已创建记录，用 PUT 更新
       const res = await client.bitable.v1.appTableRecord.update({
         path: {
@@ -167,7 +180,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      return NextResponse.json({ success: true, recordId, action: 'updated' });
+      return NextResponse.json({ success: true, recordId, action: 'updated', existingUserId });
     } else {
       // H5 独立使用，创建新记录
       const res = await client.bitable.v1.appTableRecord.create({
