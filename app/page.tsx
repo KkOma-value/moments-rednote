@@ -54,8 +54,23 @@ export default function PlaygroundEditorial() {
         const rid = params.get('rid');
         if (uid) setUserId(uid);
         if (rid) setRecordId(rid);
-        if (plt === 'rednote') setPlatform(Platform.RedNote);
-        else if (plt === 'wechat') setPlatform(Platform.WeChat);
+        const currentPlatform = plt === 'rednote' ? Platform.RedNote : plt === 'wechat' ? Platform.WeChat : null;
+        if (currentPlatform) setPlatform(currentPlatform);
+
+        // 如果有 rid，从飞书读取已有的图片并渲染到展示区
+        if (rid) {
+            const fetchPlatform = plt || 'rednote';
+            fetch(`/api/fetch-record-photo?recordId=${encodeURIComponent(rid)}&platform=${fetchPlatform}`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.photos && data.photos.length > 0) {
+                        // 将 base64 图片设置到预览区和上传列表
+                        setPreviewData(prev => ({ ...prev, images: data.photos }));
+                        setImageBase64List(data.photos);
+                    }
+                })
+                .catch(e => console.error('Failed to fetch record photos:', e));
+        }
 
         // Auto-fill from `b` URL param and trigger generation
         const b = params.get('b');
@@ -148,7 +163,8 @@ export default function PlaygroundEditorial() {
             if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || 'Generation failed'); }
             const data = await res.json();
             const generatedContent = data.content as GeneratedContent;
-            setPreviewData(prev => ({ ...prev, generatedContent, prompt: '' }));
+            setPreviewData(prev => ({ ...prev, generatedContent, prompt: '', images: [] }));
+            setImageBase64List([]);
 
             // Auto-save to Feishu Bitable (fire-and-forget)
             const fullText = buildTextFromContent(generatedContent);
